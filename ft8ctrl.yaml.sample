@@ -1,0 +1,48 @@
+---
+
+ft8ctrl:
+  db_name: /tmp/auto_ft8.sql
+  wsjt_ip: 127.0.0.1
+  wsjt_port: 2238
+  follow_frequency: False
+  purge_time: 12
+  # Specify the call_selector plugin, and check the plugin configuration
+  call_selector: any.Any
+
+#
+# Selectors plugins.
+#
+Grid:
+  # plugin full name grid.Grid
+  regexp: '^[EF][NM]'
+
+CQZone:
+  # plugin full name zones.CQZone
+  list:
+    - 14
+    - 11
+    - 8
+    - 4
+    - 9
+
+ITUZone:
+  # plugin full name zones.ITUZone
+  list:
+    - 14
+    - 11
+    - 8
+    - 4
+    - 9
+
+Country:
+  # plugin full name continent.Country
+  list:
+    - United States
+    - Canada
+
+Continent:
+  # plugin full name continent.Continent
+  list:
+    - OC
+    - EU
+    - SA
