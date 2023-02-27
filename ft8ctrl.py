@@ -19,11 +19,12 @@ from queue import Queue
 import wsjtx
 
 from dbutils import create_db, get_call, DBInsert, Purge
-from dbutils import INSERT, STATUS
+from dbutils import DBCommand
 
 from config import Config
 
 RE_CQ = re.compile(r'^CQ ((?P<extra>.*) |)(?P<call>\w+)(|/\w+) (?P<grid>[A-Z]{2}[0-9]{2})')
+RE_REPLY = re.compile(r'^((?!CQ)(?P<to>\w+)(|/\w+)) (?P<call>\w+)(|/\w+) (?P<grid>[A-Z]{2}[0-9]{2})')
 
 LOG = logging.root
 
@@ -59,10 +60,16 @@ class Sequencer:
     LOG.debug('Transmitting %s', packet)
     self.sock.sendto(packet.raw(), ip_from)
 
+
+  def check_reply(self, msg, packet):
+    if msg['call'] == self.current and msg['to'] != 'W6BSD':
+      print('*'* 50, foo['to'], foo['call'])
+
   def run(self):
-    frequency = 0
     ip_from = None
     tx_status = False
+    frequency = 0
+    self.current = None
     while True:
       fds, _, _ = select.select([self.sock], [], [], .5)
       sequence = int(time.time()) % 15
@@ -71,43 +78,53 @@ class Sequencer:
         packet = wsjtx.ft8_decode(rawdata)
         if isinstance(packet, wsjtx.WSHeartbeat):
           pass
+        elif isinstance(packet, wsjtx.WSLogged):
+          self.current = None
+          self.queue.put((DBCommand.STATUS, dict(call=packet.DXCall, status=2)))
+          LOG.info(str(packet))
         elif isinstance(packet, wsjtx.WSDecode):
+          match = RE_REPLY.match(packet.Message)
+          if match:
+            self.check_reply(match.groupdict(), packet)
+
+          # Handling CQ
           match = RE_CQ.match(packet.Message)
-          if not match:
-            continue
-          caller = match.groupdict()
-          caller['frequency'] = frequency
-          caller['packet'] = packet.as_dict()
-          self.queue.put((INSERT, caller))
+          if match:
+            caller = match.groupdict()
+            caller['frequency'] = frequency
+            caller['packet'] = packet.as_dict()
+            self.queue.put((DBCommand.INSERT, caller))
+
         elif isinstance(packet, wsjtx.WSStatus):
           frequency = packet.Frequency
           tx_status = any([packet.Transmitting, packet.TXEnabled])
 
           if (packet.Transmitting and packet.DXCall):
-            self.queue.put((STATUS, dict(call=packet.DXCall, status=1)))
+            self.queue.put((DBCommand.STATUS, dict(call=packet.DXCall, status=1)))
 
           if not packet.TXWatchdog and tx_status:
             continue
           LOG.warning("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
                       packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
 
-        elif isinstance(packet, wsjtx.WSLogged):
-          self.queue.put((STATUS, dict(call=packet.DXCall, status=2)))
-          LOG.info(str(packet))
-
+      ## Outside the for loop ##
       if not tx_status and sequence == 1:
         data = self.selector()
         if data:
-          LOG.info('Calling: %s SNR: %d Distance: %d', data['call'], data['snr'], data['distance'])
+          LOG.info('Calling: http://www.qrz.com/db/%s SNR: %d Distance: %d',
+                   data['call'], data['snr'], data['distance'])
           self.call_station(ip_from, data['call'])
+          time.sleep(1)
+          self.current = data['call']
         else:
+          self.current = None
           LOG.info('No call selected')
-        time.sleep(1)
+
 
 class Plugins:
 
   def __init__(self, plugins):
-    # Download plugins
+    """Load and initialize plugins"""
     self.call_select = []
     if isinstance(plugins, str):
       plugins = [plugins]
@@ -119,7 +136,7 @@ class Plugins:
       klass = getattr(module, class_name)
       self.call_select.append(klass())
 
-  def next(self):
+  def __call__(self):
     call = None
     for selector in self.call_select:
       call = selector.get()
@@ -137,12 +154,12 @@ def main():
     format='%(asctime)s - %(levelname)s[%(lineno)d] - %(message)s',
     datefmt='%H:%M:%S', level=logging.INFO
   )
-  LOG = logging.getLogger('Auto_FT8')
   loglevel = os.getenv('LOGLEVEL', 'INFO')
   if loglevel not in logging._nameToLevel: # pylint: disable=protected-access
-    LOG.error('Log level "%s" does not exist, defaulting to INFO', loglevel)
+    logging.error('Log level "%s" does not exist, defaulting to INFO', loglevel)
     loglevel = logging.INFO
-  LOG.setLevel(loglevel)
+  logging.root.setLevel(loglevel)
+  LOG = logging.getLogger('Auto_FT8')
 
   create_db(config.db_name)
 
@@ -157,7 +174,7 @@ def main():
 
   LOG.info('Call selector: %s', config.call_selector)
   call_select = Plugins(config.call_selector)
-  main_loop = Sequencer(config, queue, call_select.next)
+  main_loop = Sequencer(config, queue, call_select)
   main_loop.run()
 
 if __name__ == '__main__':

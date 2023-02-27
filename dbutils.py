@@ -13,16 +13,21 @@ import sys
 import time
 
 from datetime import datetime
+from enum import Enum
 from threading import Thread
 
 import DXEntity
 import geo
 
 # DBInsert commands.
-INSERT = 1
-STATUS = 2
+
+class DBCommand(Enum):
+  INSERT = 1
+  STATUS = 2
+
 
 LOG = logging.getLogger('dbutil')
+LOG.setLevel(os.getenv('LOGLEVEL', 'INFO'))
 
 SQL_TABLE = """
 CREATE TABLE IF NOT EXISTS cqcalls
@@ -74,10 +79,8 @@ class DBJSONDecoder(json.JSONDecoder):
 
     return json_obj
 
-
 sqlite3.register_adapter(dict, DBJSONEncoder().encode)
 sqlite3.register_converter('JSON', lambda x: DBJSONDecoder().decode(x.decode('utf-8')))
-
 
 def connect_db(db_name):
   try:
@@ -108,6 +111,13 @@ def get_call(db_name, call):
 
 class DBInsert(Thread):
 
+  INSERT = """
+  INSERT INTO cqcalls VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT(call) DO UPDATE SET snr=?, packet=?
+  """
+
+  UPDATE = "UPDATE cqcalls SET status=? WHERE call=?"
+
   def __init__(self, db_name, queue):
     super().__init__()
     self.db_name = db_name
@@ -121,7 +131,7 @@ class DBInsert(Thread):
     # Run forever and consume the queue
     while True:
       cmd, data = self.queue.get()
-      if cmd == INSERT:
+      if cmd == DBCommand.INSERT:
         lat, lon = geo.grid2latlon(data['grid'])
         data['lat'], data['lon'] = lat, lon
         data['distance'] = geo.distance(self.origin, (lat, lon))
@@ -140,7 +150,7 @@ class DBInsert(Thread):
           DBInsert.write(conn, data)
         except sqlite3.OperationalError as err:
           LOG.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
-      elif cmd == STATUS:
+      elif cmd == DBCommand.STATUS:
         try:
           DBInsert.status(conn, data)
         except sqlite3.OperationalError as err:
@@ -152,19 +162,20 @@ class DBInsert(Thread):
 
     with conn:
       curs = conn.cursor()
-      curs.execute("""INSERT INTO cqcalls VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(call) DO UPDATE SET snr=?, time=?, packet=?""", (
-        data.call, data.extra, data.packet['Time'], 0, data.packet['SNR'], data.grid,
-        data.lat, data.lon, data.distance, data.azimuth, data.country, data.continent,
-        data.cqzone, data.ituzone, data.frequency, data.packet,
-        data.packet['SNR'], data.packet['Time'], data.packet))
+      curs.execute(DBInsert.INSERT,
+                   (data.call, data.extra, data.packet['Time'], 0, data.packet['SNR'],
+                    data.grid, data.lat, data.lon, data.distance, data.azimuth,
+                    data.country, data.continent, data.cqzone, data.ituzone,
+                    data.frequency, data.packet,
+                    # Upsert data
+                    data.packet['SNR'], data.packet))
 
   @staticmethod
   def status(conn, call):
     with conn:
       curs = conn.cursor()
-      curs.execute('UPDATE cqcalls SET status=? WHERE call=?', (call['status'], call['call']))
-
+      curs.execute(DBInsert.UPDATE, (call['status'], call['call']))
+      LOG.debug("%s (%s, %s)", DBInsert.UPDATE, call['status'], call['call'])
 
 class Purge(Thread):
   REQ = "DELETE FROM cqcalls WHERE status < 2 AND time < datetime('now','{} minute');"

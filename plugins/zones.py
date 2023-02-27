@@ -10,7 +10,7 @@ import operator
 from datetime import datetime, timedelta
 
 from dbutils import connect_db
-from . import CallSelector
+from .base import CallSelector
 
 class ZoneBase(CallSelector):
 
@@ -23,12 +23,17 @@ class ZoneBase(CallSelector):
     if isinstance(cfg_list, str):
       cfg_list = [cfg_list]
 
+    if hasattr(self.config, 'Reverse') and self.config.Reverse:
+      _not = 'NOT'
+    else:
+      _not = ''
+
     for zone in cfg_list:
       try:
         zones_list.append(str(int(zone)))
       except ValueError:
         self.log.warning('Zone "%s" is not a integer', zone)
-    self.req = self.REQ.format(','.join(zones_list))
+    self.req = self.REQ.format(_not, ','.join(zones_list))
     self.conn = connect_db(self.db_name)
 
   def get(self):
@@ -48,12 +53,12 @@ class CQZone(ZoneBase):
 
   REQ = """
   SELECT call, snr, distance, time FROM cqcalls
-  WHERE status = 0 AND time > ? AND cqzone in ({})
+  WHERE status = 0 AND time > ? AND cqzone {} IN ({})
   """
 
 class ITUZone(ZoneBase):
 
   REQ = """
   SELECT call, snr, distance, time FROM cqcalls
-  WHERE status = 0 AND time > ? AND cqzone in ({})
+  WHERE status = 0 AND time > ? AND cqzone {} IN ({})
   """

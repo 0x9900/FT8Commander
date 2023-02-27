@@ -12,7 +12,7 @@ import re
 from datetime import datetime, timedelta
 
 from dbutils import connect_db
-from . import CallSelector
+from .base import CallSelector
 
 class Grid(CallSelector):
 

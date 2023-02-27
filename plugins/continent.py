@@ -10,7 +10,7 @@ import operator
 from datetime import datetime, timedelta
 
 from dbutils import connect_db
-from . import CallSelector
+from .base import CallSelector
 
 class LandBase(CallSelector):
 
@@ -22,7 +22,12 @@ class LandBase(CallSelector):
     if isinstance(c_list, str):
       c_list = [c_list]
     c_list = (f'"{c}"' for c in c_list)
-    self.req = self.REQ.format(','.join(c_list))
+    if hasattr(self.config, 'Reverse') and self.config.Reverse:
+      _not = 'NOT'
+    else:
+      _not = ''
+
+    self.req = self.REQ.format(_not, ','.join(c_list))
     self.conn = connect_db(self.db_name)
 
   def get(self):
@@ -42,12 +47,12 @@ class Continent(LandBase):
 
   REQ = """
   SELECT call, snr, distance, time FROM cqcalls
-  WHERE status = 0 AND time > ? AND continent in ({})
+  WHERE status = 0 AND time > ? AND continent {} in ({})
   """
 
 class Country(LandBase):
 
   REQ = """
   SELECT call, snr, distance, time FROM cqcalls
-  WHERE status = 0 AND time > ? AND country in ({})
+  WHERE status = 0 AND time > ? AND country {} in ({})
   """
