@@ -5,19 +5,25 @@ ft8ctrl:
   wsjt_ip: 127.0.0.1
   wsjt_port: 2238
   follow_frequency: False
-  purge_time: 12
+  purge_time: 4                 # In minutes
   # Specify the call_selector plugin, and check the plugin configuration
-  call_selector: any.Any
+  call_selector:
+    - Continent
 
 #
 # Selectors plugins.
 #
 Grid:
-  # plugin full name grid.Grid
-  regexp: '^[EF][NM]'
+  regexp: '^[EF][NM].*'
 
+Prefix:
+  regexp: '^D2UY'
+
+#
+# Use "Reverse: True" for not in the list
+#
 CQZone:
-  # plugin full name zones.CQZone
+  Reverse: False
   list:
     - 14
     - 11
@@ -26,7 +32,7 @@ CQZone:
     - 9
 
 ITUZone:
-  # plugin full name zones.ITUZone
+  Reverse: True
   list:
     - 14
     - 11
@@ -35,14 +41,11 @@ ITUZone:
     - 9
 
 Country:
-  # plugin full name continent.Country
+  Reverse: True
   list:
     - United States
     - Canada
 
 Continent:
-  # plugin full name continent.Continent
   list:
-    - OC
-    - EU
-    - SA
+    - AF
