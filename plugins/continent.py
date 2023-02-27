@@ -9,7 +9,7 @@ import operator
 
 from datetime import datetime, timedelta
 
-from ..dbutils import connect_db
+from dbutils import connect_db
 from . import CallSelector
 
 class LandBase(CallSelector):

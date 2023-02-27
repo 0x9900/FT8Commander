@@ -98,7 +98,7 @@ class Sequencer:
       if not tx_status and sequence == 1:
         data = self.selector()
         if data:
-          LOG.info('Calling: %s SNR: %d Distance: %f', data['call'], data['snr'], data['distance'])
+          LOG.info('Calling: %s SNR: %d Distance: %d', data['call'], data['snr'], data['distance'])
           self.call_station(ip_from, data['call'])
         else:
           LOG.info('No call selected')

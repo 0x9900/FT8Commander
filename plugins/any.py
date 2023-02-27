@@ -10,7 +10,7 @@ import operator
 from datetime import datetime, timedelta
 
 from . import CallSelector
-from ..dbutils import connect_db
+from dbutils import connect_db
 
 class Any(CallSelector):
 

@@ -11,7 +11,7 @@ import re
 
 from datetime import datetime, timedelta
 
-from ..dbutils import connect_db
+from dbutils import connect_db
 from . import CallSelector
 
 class Grid(CallSelector):

@@ -10,7 +10,7 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 
-from ..config import Config
+from config import Config
 
 class CallSelector(ABC):
 
