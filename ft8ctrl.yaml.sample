@@ -7,8 +7,7 @@ ft8ctrl:
   follow_frequency: False
   purge_time: 4                 # In minutes
   # Specify the call_selector plugin, and check the plugin configuration
-  call_selector:
-    - Continent
+  call_selector: Any
 
 #
 # Selectors plugins.
