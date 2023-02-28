@@ -23,14 +23,17 @@ from dbutils import DBCommand
 
 from config import Config
 
-RE_CQ = re.compile(r'^CQ ((?P<extra>.*) |)(?P<call>\w+)(|/\w+) (?P<grid>[A-Z]{2}[0-9]{2})')
-RE_REPLY = re.compile(r'^((?!CQ)(?P<to>\w+)(|/\w+)) (?P<call>\w+)(|/\w+) (?P<grid>[A-Z]{2}[0-9]{2})')
+PARSERS = {
+  'REPLY': re.compile(r'^((?!CQ)(?P<to>\w+)(|/\w+)) (?P<call>\w+)(|/\w+) .*'),
+  'CQ': re.compile(r'^CQ ((?P<extra>.*) |)(?P<call>\w+)(|/\w+) (?P<grid>[A-Z]{2}[0-9]{2})'),
+}
 
 LOG = logging.root
 
 class Sequencer:
   def __init__(self, config, queue, call_select):
     self.db_name = config.db_name
+    self.mycall = config.my_call
     self.queue = queue
     self.selector = call_select
     self.follow_frequency = config.follow_frequency
@@ -60,16 +63,28 @@ class Sequencer:
     LOG.debug('Transmitting %s', packet)
     self.sock.sendto(packet.raw(), ip_from)
 
+  def stop_transmit(self, ip_from):
+    stop_pkt = wsjtx.WSHaltTx()
+    stop_pkt.tx = True
+    try:
+      self.sock.sendto(stop_pkt.raw(), ip_from)
+    except Exception as err:
+      LOG.error(err)
 
-  def check_reply(self, msg, packet):
-    if msg['call'] == self.current and msg['to'] != 'W6BSD':
-      LOG.debug("%s %s %s", '*'* 50, msg['to'], msg['call'])
+
+  def parser(self, message):
+    for name, regexp in PARSERS.items():
+      match = regexp.match(message)
+      if match:
+        return (name, match.groupdict())
+    return (None, None)
 
   def run(self):
     ip_from = None
     tx_status = False
     frequency = 0
     self.current = None
+
     while True:
       fds, _, _ = select.select([self.sock], [], [], .5)
       sequence = int(time.time()) % 15
@@ -83,18 +98,25 @@ class Sequencer:
           self.queue.put((DBCommand.STATUS, dict(call=packet.DXCall, status=2)))
           LOG.info("Logged call: %s, Grid: %s, Mode: %s",
                    packet.DXCall, packet.DXGrid, packet.Mode)
-        elif isinstance(packet, wsjtx.WSDecode):
-          match = RE_REPLY.match(packet.Message)
-          if match:
-            self.check_reply(match.groupdict(), packet)
 
-          # Handling CQ
-          match = RE_CQ.match(packet.Message)
-          if match:
-            caller = match.groupdict()
-            caller['frequency'] = frequency
-            caller['packet'] = packet.as_dict()
-            self.queue.put((DBCommand.INSERT, caller))
+          with open('/tmp/ft8ctrl.adi', 'a', encoding='utf-8') as fd_adif:
+            print(str(packet), file=fd_adif)
+
+          ### Fix this
+          log_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+          log_sock.sendto(packet.raw(), ('127.0.0.1', 2237))
+
+        elif isinstance(packet, wsjtx.WSDecode):
+          name, match = self.parser(packet.Message)
+          if name is None:
+            continue
+          if name == 'REPLY' and match['call'] == self.current and match['to'] != self.mycall:
+            LOG.info("Stop Transmit: %s Replying to %s ", match['to'], match['call'])
+            self.stop_transmit(ip_from)
+          elif name == 'CQ':
+            match['frequency'] = frequency
+            match['packet'] = packet.as_dict()
+            self.queue.put((DBCommand.INSERT, match))
 
         elif isinstance(packet, wsjtx.WSStatus):
           frequency = packet.Frequency

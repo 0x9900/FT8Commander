@@ -4,6 +4,7 @@
 #
 
 ft8ctrl:
+  my_call: <UR-CALL>
   db_name: /tmp/auto_ft8.sql
   wsjt_ip: 127.0.0.1
   wsjt_port: 2238
