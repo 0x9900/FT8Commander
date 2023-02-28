@@ -63,7 +63,7 @@ class Sequencer:
 
   def check_reply(self, msg, packet):
     if msg['call'] == self.current and msg['to'] != 'W6BSD':
-      print('*'* 50, msg['to'], msg['call'])
+      LOG.debug("%s %s %s", '*'* 50, msg['to'], msg['call'])
 
   def run(self):
     ip_from = None
