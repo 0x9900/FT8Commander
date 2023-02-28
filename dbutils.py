@@ -116,7 +116,7 @@ class DBInsert(Thread):
   ON CONFLICT(call) DO UPDATE SET snr=?, packet=?
   """
 
-  UPDATE = "UPDATE cqcalls SET status=? WHERE call=?"
+  UPDATE = "UPDATE cqcalls SET status=? WHERE status =! 2 and call=?"
 
   def __init__(self, db_name, queue):
     super().__init__()
