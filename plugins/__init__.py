@@ -9,6 +9,6 @@ from .any import Any
 from .continent import Continent
 from .continent import Country
 from .grid import Grid
-from .prefix import Prefix
+from .callsign import CallSign
 from .zones import CQZone
 from .zones import ITUZone

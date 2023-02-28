@@ -18,7 +18,7 @@ class Grid(CallSelector):
 
   REQ = """
   SELECT call, snr, distance, time FROM cqcalls
-  WHERE status = 0 AND time > ? AND grid REGEXP ?
+  WHERE status = 0 AND time > ? AND grid ? REGEXP ?
   """
 
   def __init__(self):
@@ -26,13 +26,14 @@ class Grid(CallSelector):
     self.conn = connect_db(self.db_name)
     self.conn.create_function('regexp', 2, Grid.regexp)
     self.expr = self.config.regexp
+    self.reverse = self.isreverse()
 
   def get(self):
     records = []
     start = datetime.utcnow() - timedelta(seconds=self.delta)
     with self.conn:
       curs = self.conn.cursor()
-      curs.execute(self.REQ, (start, self.expr))
+      curs.execute(self.REQ, (start, self.reverse(), self.expr))
       for record in (dict(r) for r in curs):
         record['coef'] = self.coefficient(record['distance'], record['snr'])
         records.append(record)

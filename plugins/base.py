@@ -18,6 +18,7 @@ class CallSelector(ABC):
     self.config = config.get(self.__class__.__name__)
     self.db_name = config['ft8ctrl.db_name']
     self.log = logging.getLogger(self.__class__.__name__)
+
     try:
       self.delta = self.config.delta
     except AttributeError:
@@ -26,6 +27,11 @@ class CallSelector(ABC):
   @abstractmethod
   def get(self):
     pass
+
+  def isreverse(self):
+    if hasattr(self.config, 'reverse') and self.config.reverse:
+      return 'NOT'
+    return ''
 
   @staticmethod
   def coefficient(dist, snr):

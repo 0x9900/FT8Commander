@@ -1,26 +1,29 @@
 ---
+#
+# /!\ The content of this file is case sensitive
+#
 
 ft8ctrl:
   db_name: /tmp/auto_ft8.sql
   wsjt_ip: 127.0.0.1
   wsjt_port: 2238
   follow_frequency: False
-  purge_time: 4                 # In minutes
-  # Specify the call_selector plugin, and check the plugin configuration
+  purge_time: 15                 # In minutes
+  # Specify which call_selector you want to use, then check the plugin configuration
+  # The selector 'Any' accept any callsigns.
   call_selector: Any
 
 #
 # Selectors plugins.
-#
-Grid:
-  regexp: '^[EF][NM].*'
-
-Prefix:
-  regexp: '^D2UY'
-
-#
 # Use "Reverse: True" for not in the list
 #
+Grid:
+  regexp: ^[EF][NM].*
+
+CallSign:
+  Reverse: True
+  regexp: ^[WK](\w|)\d
+
 CQZone:
   Reverse: False
   list:

@@ -39,6 +39,9 @@ class Config:
         except ValueError as err:
           self.log.error('Configuration error "%s"', err)
           sys.exit(os.EX_CONFIG)
+        except yaml.scanner.ScannerError as err:
+          self.log.error('Configuration file syntax error: %s', err)
+          sys.exit(os.EX_CONFIG)
         return
     self.log.error('Configuration file "%s" not found', CONFIG_FILENAME)
     sys.exit(os.EX_CONFIG)

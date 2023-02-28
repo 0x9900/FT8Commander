@@ -81,7 +81,8 @@ class Sequencer:
         elif isinstance(packet, wsjtx.WSLogged):
           self.current = None
           self.queue.put((DBCommand.STATUS, dict(call=packet.DXCall, status=2)))
-          LOG.info(str(packet))
+          LOG.info("Logged call: %s, Grid: %s, Mode: %s",
+                   packet.DXCall, packet.DXGrid, packet.Mode)
         elif isinstance(packet, wsjtx.WSDecode):
           match = RE_REPLY.match(packet.Message)
           if match:
@@ -104,8 +105,8 @@ class Sequencer:
 
           if not packet.TXWatchdog and tx_status:
             continue
-          LOG.warning("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
-                      packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
+          LOG.info("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
+                   packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
 
       ## Outside the for loop ##
       if not tx_status and sequence == 1:

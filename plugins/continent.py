@@ -22,12 +22,7 @@ class LandBase(CallSelector):
     if isinstance(c_list, str):
       c_list = [c_list]
     c_list = (f'"{c}"' for c in c_list)
-    if hasattr(self.config, 'Reverse') and self.config.Reverse:
-      _not = 'NOT'
-    else:
-      _not = ''
-
-    self.req = self.REQ.format(_not, ','.join(c_list))
+    self.req = self.REQ.format(self.isreverse(), ','.join(c_list))
     self.conn = connect_db(self.db_name)
 
   def get(self):
