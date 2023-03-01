@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 
 from dbutils import connect_db
 from .base import CallSelector
+from DXEntity import DXCC
 
 class LandBase(CallSelector):
 
@@ -16,12 +17,6 @@ class LandBase(CallSelector):
 
   def __init__(self):
     super().__init__()
-    c_list = self.config.list
-    if isinstance(c_list, str):
-      c_list = [c_list]
-    c_list = (f'"{c}"' for c in c_list)
-    self.req = self.REQ.format(self.isreverse(), ','.join(c_list))
-    self.conn = connect_db(self.db_name)
 
   def get(self):
     records = []
@@ -44,9 +39,44 @@ class Continent(LandBase):
   WHERE status = 0 AND time > ? AND continent {} in ({})
   """
 
+  CONTINENTS = ["AF", "AS", "EU", "NA", "OC", "SA"]
+
+  def __init__(self):
+    super().__init__()
+    c_list = set([])
+    continent = self.config.list
+    if isinstance(continent, str):
+      continent = [continent]
+    for cnt in continent:
+      if cnt not in self.CONTINENTS:
+        self.log.warning('Ignoring continent: "%s" is not valid', cnt)
+      else:
+        c_list.add(f'"{cnt}"')
+
+    self.req = self.REQ.format(self.isreverse(), ','.join(c_list))
+    self.conn = connect_db(self.db_name)
+
+
 class Country(LandBase):
 
   REQ = """
   SELECT call, snr, distance, time FROM cqcalls
   WHERE status = 0 AND time > ? AND country {} in ({})
   """
+
+  def __init__(self):
+    super().__init__()
+    c_list = set([])
+    dxcc = DXCC()
+    entities = self.config.list
+    if isinstance(entities, str):
+      entities = [entities]
+
+    for country in entities:
+      if not dxcc.isentity(country):
+        self.log.warning('Ignoring country: "%s" is not a valid entity', country)
+      else:
+        c_list.add(f'"{country}"')
+
+    self.req = self.REQ.format(self.isreverse(), ','.join(c_list))
+    self.conn = connect_db(self.db_name)

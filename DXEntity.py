@@ -45,12 +45,15 @@ class DXCC:
                         r'(?:\[(?P<ituzone>\d+)\]|)(?:{(?P<continent>\w+)}|).*')
   def __init__(self):
     self._map = {}
+    self._entities = set([])
     cty = files('bigcty').joinpath('cty.csv').read_text()
     logging.debug('Read bigcty callsign database')
     csvfd = csv.reader(io.StringIO(cty))
     for row in csvfd:
       self._map.update(self.parse(row))
     self.max_len = max(len(v) for v in self._map)
+    for record in self._map.values():
+      self._entities.add(record.country)
 
   @staticmethod
   def parse(record):
@@ -79,6 +82,15 @@ class DXCC:
       if prefix in self._map:
         return self._map[prefix]
     raise KeyError(f"{call} not found")
+
+  def isentity(self, country):
+    if country in self._entities:
+      return True
+    return False
+
+  @property
+  def entities(self):
+    return self._entities
 
   def __str__(self):
     return f"{self.__class__} {id(self)} ({len(self._map)} records)"
