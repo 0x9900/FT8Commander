@@ -6,7 +6,6 @@
 #
 #
 
-import operator
 import re
 
 from datetime import datetime, timedelta

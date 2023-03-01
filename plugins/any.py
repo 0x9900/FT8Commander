@@ -5,8 +5,6 @@
 # All rights reserved.
 #
 
-import operator
-
 from datetime import datetime, timedelta
 
 from .base import CallSelector
