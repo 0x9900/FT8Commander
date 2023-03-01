@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 m.py
 ft8ctrl.yaml
+*.ipynb
 
 # C extensions
 *.so
