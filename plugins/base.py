@@ -36,3 +36,7 @@ class CallSelector(ABC):
   @staticmethod
   def coefficient(dist, snr):
     return dist * 10**(snr/10)
+
+  @staticmethod
+  def sort(records):
+    return sorted(records, key=operator.itemgetter('snr'), reverse=True)

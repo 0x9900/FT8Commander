@@ -42,7 +42,8 @@ class ZoneBase(CallSelector):
       for record in (dict(r) for r in curs):
         record['coef'] = self.coefficient(record['distance'], record['snr'])
         records.append(record)
-    records.sort(key=operator.itemgetter('coef'), reverse=True)
+
+    records = self.sort(records)
     return records[0] if records else None
 
 
