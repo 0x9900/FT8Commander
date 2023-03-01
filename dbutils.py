@@ -189,7 +189,7 @@ class Purge(Thread):
 
   def run(self):
     count = 0
-    LOG.info('Purge thread started (purge_time %d)', self.purge_time)
+    LOG.info('Purge thread started (retry_time %d minutes)', abs(self.purge_time))
     conn = connect_db(self.db_name)
     while True:
       with conn:

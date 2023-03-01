@@ -191,7 +191,7 @@ def main():
   db_thread.daemon = True
   db_thread.start()
 
-  db_purge = Purge(config.db_name, config.purge_time)
+  db_purge = Purge(config.db_name, config.retry_time)
   db_purge.daemon = True
   db_purge.start()
 
