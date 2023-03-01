@@ -22,7 +22,7 @@ if len(sys.argv) != 2:
   print('Usage: lookup callsign')
   sys.exit(1)
 else:
-  call = sys.argv[1]
+  call = sys.argv[1].upper()
 
 def regexp(expr, data):
   return 1 if re.search(expr, data) else 0

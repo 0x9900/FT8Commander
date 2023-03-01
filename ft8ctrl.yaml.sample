@@ -16,7 +16,7 @@ ft8ctrl:
   call_selector: Any
 
 #
-# Selectors plugins.
+# Selectors plugins configuration.
 # Use "Reverse: True" for not in the list
 #
 Grid:

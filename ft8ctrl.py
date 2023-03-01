@@ -111,7 +111,7 @@ class Sequencer:
           if name is None:
             continue
           if name == 'REPLY' and match['call'] == self.current and match['to'] != self.mycall:
-            LOG.info("Stop Transmit: %s Replying to %s ", match['to'], match['call'])
+            LOG.info("Stop Transmit: %s Replying to %s ", match['call'], match['to'])
             self.stop_transmit(ip_from)
           elif name == 'CQ':
             match['frequency'] = frequency
