@@ -187,7 +187,7 @@ def main():
   create_db(config.db_name)
 
   queue = Queue()
-  db_thread = DBInsert(config.db_name, queue)
+  db_thread = DBInsert(config, queue)
   db_thread.daemon = True
   db_thread.start()
 

@@ -118,11 +118,11 @@ class DBInsert(Thread):
 
   UPDATE = "UPDATE cqcalls SET status=? WHERE status <> 2 and call=?"
 
-  def __init__(self, db_name, queue):
+  def __init__(self, config, queue):
     super().__init__()
-    self.db_name = db_name
+    self.db_name = config.db_name
     self.queue = queue
-    self.origin = geo.grid2latlon('CM87vl')
+    self.origin = geo.grid2latlon(config.my_grid)
     self.dxe_lookup = DXEntity.DXCC().lookup
 
   def run(self):
