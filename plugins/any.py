@@ -19,14 +19,13 @@ class Any(CallSelector):
 
   def __init__(self):
     super().__init__()
-    self.min_snr = getattr(self.config, "min_snr", -30)
 
   def get(self):
     records = []
     start = datetime.utcnow() - timedelta(seconds=self.delta)
     with connect_db(self.db_name) as conn:
       curs = conn.cursor()
-      curs.execute(self.REQ, (self.min_snr, start,))
+      curs.execute(self.REQ, (self.min_snr, start))
       for record in (dict(r) for r in curs):
         record['coef'] = self.coefficient(record['distance'], record['snr'])
         records.append(record)

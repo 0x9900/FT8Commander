@@ -127,7 +127,7 @@ class Sequencer:
 
           if not packet.TXWatchdog and tx_status:
             continue
-          LOG.info("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
+          LOG.debug("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
                    packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
 
       ## Outside the for loop ##
@@ -198,7 +198,10 @@ def main():
   LOG.info('Call selector: %s', config.call_selector)
   call_select = Plugins(config.call_selector)
   main_loop = Sequencer(config, queue, call_select)
-  main_loop.run()
+  try:
+    main_loop.run()
+  except KeyboardInterrupt:
+    LOG.info('^C pressed exiting')
 
 if __name__ == '__main__':
   main()

@@ -23,7 +23,7 @@ class LandBase(CallSelector):
     start = datetime.utcnow() - timedelta(seconds=self.delta)
     with connect_db(self.db_name) as conn:
       curs = conn.cursor()
-      curs.execute(self.req, (start,))
+      curs.execute(self.req, (self.min_snr, start))
       for record in (dict(r) for r in curs):
         record['coef'] = self.coefficient(record['distance'], record['snr'])
         records.append(record)
@@ -36,7 +36,7 @@ class Continent(LandBase):
 
   REQ = """
   SELECT call, snr, distance, time FROM cqcalls
-  WHERE status = 0 AND time > ? AND continent {} in ({})
+  WHERE status = 0 AND snr > ? AND time > ? AND continent {} in ({})
   """
 
   CONTINENTS = ["AF", "AS", "EU", "NA", "OC", "SA"]
@@ -61,7 +61,7 @@ class Country(LandBase):
 
   REQ = """
   SELECT call, snr, distance, time FROM cqcalls
-  WHERE status = 0 AND time > ? AND country {} in ({})
+  WHERE status = 0 AND snr > ? AND time > ? AND country {} in ({})
   """
 
   def __init__(self):

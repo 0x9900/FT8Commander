@@ -36,7 +36,7 @@ class ZoneBase(CallSelector):
     start = datetime.utcnow() - timedelta(seconds=self.delta)
     with connect_db(self.db_name) as conn:
       curs = conn.cursor()
-      curs.execute(self.req, (start,))
+      curs.execute(self.req, (self.min_snr, start))
       for record in (dict(r) for r in curs):
         record['coef'] = self.coefficient(record['distance'], record['snr'])
         records.append(record)
@@ -49,12 +49,12 @@ class CQZone(ZoneBase):
 
   REQ = """
   SELECT call, snr, distance, time FROM cqcalls
-  WHERE status = 0 AND time > ? AND cqzone {} IN ({})
+  WHERE status = 0 AND snr > ? AND time > ? AND cqzone {} IN ({})
   """
 
 class ITUZone(ZoneBase):
 
   REQ = """
   SELECT call, snr, distance, time FROM cqcalls
-  WHERE status = 0 AND time > ? AND cqzone {} IN ({})
+  WHERE status = 0 AND snr > ? AND time > ? AND cqzone {} IN ({})
   """

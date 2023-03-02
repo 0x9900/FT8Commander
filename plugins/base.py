@@ -19,11 +19,9 @@ class CallSelector(ABC):
     self.config = config.get(self.__class__.__name__)
     self.db_name = config['ft8ctrl.db_name']
     self.log = logging.getLogger(self.__class__.__name__)
+    self.min_snr = getattr(self.config, "min_snr", -50)
+    self.delta = getattr(self.config, "delta", 28)
 
-    try:
-      self.delta = self.config.delta
-    except AttributeError:
-      self.delta = 20
 
   @abstractmethod
   def get(self):
