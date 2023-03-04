@@ -12,3 +12,4 @@ from .grid import Grid
 from .callsign import CallSign
 from .zones import CQZone
 from .zones import ITUZone
+from .special import DXCC100
