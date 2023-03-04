@@ -187,7 +187,6 @@ class DBInsert(Thread):
       curs = conn.cursor()
       curs.execute(DBInsert.DELETE, (call['call'],))
       LOG.debug("%s (%s)", DBInsert.DELETE, call['call'])
-      print('DELETE', call)
 
 class Purge(Thread):
   REQ = "DELETE FROM cqcalls WHERE status < 2 AND time < datetime('now','{} minute');"
