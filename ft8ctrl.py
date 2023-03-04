@@ -113,6 +113,7 @@ class Sequencer:
           if name == 'REPLY' and match['call'] == self.current and match['to'] != self.mycall:
             LOG.info("Stop Transmit: %s Replying to %s ", match['call'], match['to'])
             self.stop_transmit(ip_from)
+            self.queue.put((DBCommand.DELETE, match))
           elif name == 'CQ':
             match['frequency'] = frequency
             match['packet'] = packet.as_dict()

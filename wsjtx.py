@@ -11,6 +11,12 @@
 # I use the camel case names to match the names in WSJT-X
 # pylint: disable=invalid-name
 #
+# ******************************************************************
+# ***** Some of the classes haven't been fully implemented and *****
+# ***** need more work                                         *****
+# ******************************************************************
+#
+
 import struct
 import ctypes
 
@@ -53,6 +59,16 @@ class Modifiers(Enum):
   KEYPAD = 0x20
   GroupSwitch = 0x40
 
+class SOMode(Enum):
+  NONE = 0
+  NA_VHF = 1
+  EU_VHF = 2
+  FIELD_DAY = 3
+  RTTY_RU = 4
+  WW_DIGI = 5
+  FOX = 6
+  HOUND = 7
+  ARRL_DIGI = 8
 
 SHEAD = struct.Struct('!III')
 
@@ -250,6 +266,11 @@ class WSStatus(_WSPacket):
     self._data['TXWatchdog'] = self._get_bool()
     self._data['SubMode'] = self._get_string()
     self._data['Fastmode'] = self._get_bool()
+    self._data['SOMode'] = SOMode(self._get_byte())
+    self._data['FreqTolerance'] = self._get_uint32()
+    self._data['TRPeriod'] = self._get_uint32()
+    self._data['ConfigName'] = self._get_string()
+    self._data['TxMessage'] = self._get_string()
 
   @property
   def Frequency(self):
@@ -314,6 +335,27 @@ class WSStatus(_WSPacket):
   @property
   def Fastmode(self):
     return self._data['Fastmode']
+
+  @property
+  def SOMode(self):
+    return self._data['SOMode']
+
+  @property
+  def reqTolerance(self):
+    return self._data['reqTolerance']
+
+  @property
+  def RPeriod(self):
+    return self._data['RPeriod']
+
+  @property
+  def onfigName(self):
+    return self._data['onfigName']
+
+  @property
+  def xMessage(self):
+    return self._data['xMessage']
+
 
 
 class WSDecode(_WSPacket):
@@ -397,7 +439,7 @@ class WSReply(_WSPacket):
   """
   Packet Type 4 Reply (In)
   * Id (target unique key) utf8
-  * Time                   quint  (QTime)
+  * Time                   quint (QTime)
   * snr                    qint32
   * Delta time (S)         float (serialized as double)
   * Delta frequency (Hz)   quint32
@@ -518,6 +560,12 @@ class WSLogged(_WSPacket):
     self._data['TimeOn'] = dt_tuple[1]
     self._data['TimeOnSpec'] = dt_tuple[2]
     self._data['TimeOnOffset'] = dt_tuple[3]
+    self._data['OpCall'] = self._get_string()
+    self._data['MyCall'] = self._get_string()
+    self._data['MyGrid'] = self._get_string()
+    self._data['ExSent'] = self._get_string()
+    self._data['ExReceived'] = self._get_string()
+    self._data['PropMode'] = self._get_string()
 
   @property
   def DateOff(self):
@@ -586,6 +634,30 @@ class WSLogged(_WSPacket):
   @property
   def TimeOnOffset(self):
     return self._data['TimeOnOffset']
+
+  @property
+  def OpCall(self):
+    return self._data['OpCall']
+
+  @property
+  def MyCall(self):
+    return self._data['MyCall']
+
+  @property
+  def MyGrid(self):
+    return self._data['MyGrid']
+
+  @property
+  def ExSent(self):
+    return self._data['ExSent']
+
+  @property
+  def ExReceived(self):
+    return self._data['ExReceived']
+
+  @property
+  def PropMode(self):
+    return self._data['PropMode']
 
 
 class WSClose(_WSPacket):

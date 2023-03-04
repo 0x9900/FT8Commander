@@ -42,7 +42,8 @@ def azimuth(orig, dest):
 
 def grid2latlon(maiden):
   """ Transform a maidenhead grid locator to latitude & longitude """
-  assert isinstance(maiden, str), "Maidenhead locator must be a string"
+  if not maiden:
+    return (0, 0)
 
   maiden = maiden.strip().upper()
   maiden_lg = len(maiden)

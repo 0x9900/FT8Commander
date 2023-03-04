@@ -24,7 +24,7 @@ import geo
 class DBCommand(Enum):
   INSERT = 1
   STATUS = 2
-
+  DELETE = 3
 
 LOG = logging.getLogger('dbutil')
 LOG.setLevel(os.getenv('LOGLEVEL', 'INFO'))
@@ -113,10 +113,10 @@ class DBInsert(Thread):
 
   INSERT = """
   INSERT INTO cqcalls VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON CONFLICT(call) DO UPDATE SET snr=?, packet=?
+  ON CONFLICT(call) DO UPDATE SET snr = ?, packet = ?
   """
-
-  UPDATE = "UPDATE cqcalls SET status=? WHERE status <> 2 and call=?"
+  UPDATE = "UPDATE cqcalls SET status=? WHERE status <> 2 and call = ?"
+  DELETE = "DELETE from cqcalls WHERE status= 1 AND call = ?"
 
   def __init__(self, config, queue):
     super().__init__()
@@ -155,6 +155,11 @@ class DBInsert(Thread):
           DBInsert.status(conn, data)
         except sqlite3.OperationalError as err:
           LOG.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
+      elif cmd == DBCommand.DELETE:
+        try:
+          DBInsert.delete(conn, data)
+        except sqlite3.OperationalError as err:
+          LOG.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
 
   @staticmethod
   def write(conn, call_info):
@@ -162,13 +167,12 @@ class DBInsert(Thread):
 
     with conn:
       curs = conn.cursor()
-      curs.execute(DBInsert.INSERT,
-                   (data.call, data.extra, data.packet['Time'], 0, data.packet['SNR'],
-                    data.grid, data.lat, data.lon, data.distance, data.azimuth,
-                    data.country, data.continent, data.cqzone, data.ituzone,
-                    data.frequency, data.packet,
-                    # Upsert data
-                    data.packet['SNR'], data.packet))
+      curs.execute(DBInsert.INSERT, (
+        data.call, data.extra, data.packet['Time'], 0, data.packet['SNR'], data.grid,
+        data.lat, data.lon, data.distance, data.azimuth, data.country, data.continent,
+        data.cqzone, data.ituzone, data.frequency, data.packet,
+        # Upsert data
+        data.packet['SNR'], data.packet))
 
   @staticmethod
   def status(conn, call):
@@ -176,6 +180,14 @@ class DBInsert(Thread):
       curs = conn.cursor()
       curs.execute(DBInsert.UPDATE, (call['status'], call['call']))
       LOG.debug("%s (%s, %s)", DBInsert.UPDATE, call['status'], call['call'])
+
+  @staticmethod
+  def delete(conn, call):
+    with conn:
+      curs = conn.cursor()
+      curs.execute(DBInsert.DELETE, (call['call'],))
+      LOG.debug("%s (%s)", DBInsert.DELETE, call['call'])
+      print('DELETE', call)
 
 class Purge(Thread):
   REQ = "DELETE FROM cqcalls WHERE status < 2 AND time < datetime('now','{} minute');"

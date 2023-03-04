@@ -35,7 +35,7 @@ class LandBase(CallSelector):
 class Continent(LandBase):
 
   REQ = """
-  SELECT call, snr, distance, time FROM cqcalls
+  SELECT call, snr, distance, frequency, time FROM cqcalls
   WHERE status = 0 AND snr > ? AND time > ? AND continent {} in ({})
   """
 
@@ -60,7 +60,7 @@ class Continent(LandBase):
 class Country(LandBase):
 
   REQ = """
-  SELECT call, snr, distance, time FROM cqcalls
+  SELECT call, snr, distance, frequency, time FROM cqcalls
   WHERE status = 0 AND snr > ? AND time > ? AND country {} in ({})
   """
 

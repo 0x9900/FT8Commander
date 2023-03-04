@@ -2,6 +2,7 @@
 # FT8Commander
 
 > This is an experimental piece of code. Don't forget to run `git pull` often.
+> This code only works with version of WSJT-X 2.5 and above
 
 FT8Commander is an experimental project for ham radio operators who
 want automatic control of their FT8 contacts. This program controls

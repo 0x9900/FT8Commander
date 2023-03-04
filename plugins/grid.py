@@ -16,7 +16,7 @@ from .base import CallSelector
 class Grid(CallSelector):
 
   REQ = """
-  SELECT call, snr, distance, time FROM cqcalls
+  SELECT call, snr, distance, frequency, time FROM cqcalls
   WHERE status = 0 AND snr > ? AND time > ? AND grid ? REGEXP ?
   """
 
