@@ -98,10 +98,6 @@ class Sequencer:
           self.queue.put((DBCommand.STATUS, dict(call=packet.DXCall, status=2)))
           LOG.info("Logged call: %s, Grid: %s, Mode: %s",
                    packet.DXCall, packet.DXGrid, packet.Mode)
-
-          with open('/tmp/ft8ctrl.adi', 'a', encoding='utf-8') as fd_adif:
-            print(str(packet), file=fd_adif)
-
           ### Fix this
           log_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
           log_sock.sendto(packet.raw(), ('127.0.0.1', 2237))
