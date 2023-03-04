@@ -210,5 +210,5 @@ class Purge(Thread):
           count = curs.rowcount
         except sqlite3.OperationalError as err:
           LOG.error(err)
-      LOG.info('Purge %d Records', count)
+      LOG.debug('Purge %d Records', count)
       time.sleep(60)

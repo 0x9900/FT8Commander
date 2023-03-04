@@ -131,14 +131,14 @@ class Sequencer:
       if not tx_status and sequence == 1:
         data = self.selector()
         if data:
-          LOG.info('Calling: http://www.qrz.com/db/%s SNR: %d Distance: %d',
-                   data['call'], data['snr'], data['distance'])
+          LOG.info('Calling: %s, SNR: %d, Distance: %d, - http://www.qrz.com/db/%s',
+                   data['call'], data['snr'], data['distance'], data['call'])
           self.call_station(ip_from, data['call'])
           time.sleep(1)
           self.current = data['call']
         else:
           self.current = None
-          LOG.info('No call selected')
+          LOG.debug('No call selected')
 
 
 class Plugins:
