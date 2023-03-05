@@ -22,7 +22,6 @@ class CallSelector(ABC):
     self.min_snr = getattr(self.config, "min_snr", -50)
     self.delta = getattr(self.config, "delta", 28)
 
-
   @abstractmethod
   def get(self):
     pass
