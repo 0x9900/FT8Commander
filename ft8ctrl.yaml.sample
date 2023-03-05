@@ -6,7 +6,7 @@
 ft8ctrl:
   my_call: <MY-CALL>
   my_grid: <MY-GRID ie: CM87vm>
-  db_name: /tmp/auto_ft8.sql
+  db_name: /tmp/ft8ctrl.sql
   wsjt_ip: 127.0.0.1
   wsjt_port: 2238
   follow_frequency: False

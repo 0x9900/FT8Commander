@@ -1,5 +1,4 @@
 
-
 # FT8Commander
 
 > This is an experimental piece of code. Don't forget to run `git pull` often.
@@ -26,7 +25,8 @@ QSO.
 
 ## Misc
 
-This following AppleScrip will automatically click on the Logging window.
+The following AppleScript example will automatically click on the Logging window.
+** Note: Another application might steal the focus from the logging window, and the OK button might not be pressed on time. **
 
 ```
 tell application "wsjtx" to activate
@@ -41,10 +41,9 @@ tell application "System Events"
 				tell application "wsjtx" to activate
 				keystroke return
 				say "New Contact Logged"
-				delay 15
 			end if
 		end repeat
-		delay 2
+	    delay 2
 	end repeat
 end tell
 ```

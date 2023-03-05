@@ -25,26 +25,46 @@ class Config:
       cls._instance.config_data = {}
     return cls._instance
 
-  def __init__(self):
+  def __init__(self, config_filename=None):
     self.log = logging.getLogger('Config')
     if self.config_data:
       return
 
-    for path in CONFIG_LOCATIONS:
-      filename = os.path.expanduser(os.path.join(path, CONFIG_FILENAME))
+    if config_filename:
+      filename = config_filename
       if os.path.exists(filename):
         self.log.debug('Reading config file: %s', filename)
-        try:
-          self.config_data = self._read_config(filename)
-        except ValueError as err:
-          self.log.error('Configuration error "%s"', err)
-          sys.exit(os.EX_CONFIG)
-        except yaml.scanner.ScannerError as err:
-          self.log.error('Configuration file syntax error: %s', err)
-          sys.exit(os.EX_CONFIG)
+        self._readconfig(filename)
         return
-    self.log.error('Configuration file "%s" not found', CONFIG_FILENAME)
+      self.log.error('User configuration file "%s" not found. '
+                     'Opening the default confuration file.', filename)
+
+    config_filename = CONFIG_FILENAME
+    for path in CONFIG_LOCATIONS:
+      filename = os.path.expanduser(os.path.join(path, config_filename))
+      if os.path.exists(filename):
+        self.log.debug('Reading config file: %s', filename)
+        self._readconfig(filename)
+        return
+
+    self.log.error('Configuration file "%s" not found', config_filename)
     sys.exit(os.EX_CONFIG)
+
+  def _readconfig(self, filename):
+      try:
+        self.config_filename = filename
+        self.config_data = self._read_config(filename)
+      except ValueError as err:
+        self.log.error('Configuration error "%s"', err)
+        sys.exit(os.EX_CONFIG)
+      except yaml.scanner.ScannerError as err:
+        self.log.error('Configuration file syntax error: %s', err)
+        sys.exit(os.EX_CONFIG)
+
+
+  def __repr__(self):
+    myself = super().__repr__()
+    return f"{myself} file: {self.config_filename}"
 
   def to_yaml(self):
     return yaml.dump(self.config_data)
