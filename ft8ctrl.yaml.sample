@@ -36,7 +36,6 @@ CQZone:
     - 9
 
 ITUZone:
-  Reverse: True
   list:
     - 14
     - 11
@@ -53,3 +52,8 @@ Country:
 Continent:
   list:
     - AF
+    - EU
+
+DXCC100:
+  min_snr: -17
+  work_count: 2
