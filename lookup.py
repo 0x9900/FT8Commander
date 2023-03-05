@@ -10,7 +10,7 @@ from argparse import ArgumentParser
 import re
 import sys
 
-
+from config import Config
 from dbutils import connect_db
 
 REQ_RE = '''
@@ -35,8 +35,8 @@ def show_record(rec):
     print(f"{key.title():<10}: {rec[key]}")
   print('-' * 79)
 
-def find(call):
-  conn = connect_db('/tmp/auto_ft8.sql')
+def find(dbname, call):
+  conn = connect_db(dbname)
   conn.create_function('regexp', 2, regexp)
   with conn:
     curs = conn.cursor()
@@ -44,20 +44,25 @@ def find(call):
     for record in curs:
       yield record
 
-def lookup(call):
-  conn = connect_db('/tmp/auto_ft8.sql')
+def lookup(dbname, call):
+  conn = connect_db(dbname)
   with conn:
     curs = conn.cursor()
     curs.execute(REQ_LU, (call, ))
     yield curs.fetchone()
 
-def delete_record(call):
-  conn = connect_db('/tmp/auto_ft8.sql')
+def delete_record(dbname, call):
+  conn = connect_db(dbname)
   with conn:
     curs = conn.cursor()
     curs.execute(REQ_DEL, (call,))
+    if curs.rowcount > 0:
+      print(f'{call} Deleted')
+    else:
+      print(f'{call} Not found')
 
 def main():
+  config = Config()['ft8ctrl']
   parser = ArgumentParser(description="ft8ctl call sign status")
   x_group = parser.add_mutually_exclusive_group(required=False)
   x_group.add_argument("-p", "--partial", action="store_true", default=False,
@@ -70,17 +75,16 @@ def main():
   call = opts.call[0].upper()
 
   if opts.partial:
-    records = find(call)
+    records = find(config.db_name, call)
   else:
-    records = lookup(call)
+    records = lookup(config.db_name, call)
 
   for record in records:
     if not record:
       continue
     show_record(record)
-    if opts.delete:
-      delete_record(call)
-      print(f'{call} Deleted')
+  if opts.delete:
+    delete_record(config.db_name, call)
 
 if __name__ == "__main__":
   main()
