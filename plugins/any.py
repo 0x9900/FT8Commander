@@ -30,5 +30,5 @@ class Any(CallSelector):
         record['coef'] = self.coefficient(record['distance'], record['snr'])
         records.append(record)
         self.log.debug(dict(record))
-    records = self.sort(records)
-    return records[0] if records else None
+
+    return self.get_record(records)

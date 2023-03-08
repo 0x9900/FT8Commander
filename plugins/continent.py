@@ -28,8 +28,7 @@ class LandBase(CallSelector):
         record['coef'] = self.coefficient(record['distance'], record['snr'])
         records.append(record)
 
-    records = self.sort(records)
-    return records[0] if records else None
+    return self.get_record(records)
 
 
 class Continent(LandBase):

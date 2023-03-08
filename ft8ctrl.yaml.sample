@@ -58,3 +58,4 @@ Continent:
 DXCC100:
   min_snr: -17
   work_count: 2
+  lotw_users_only: True
