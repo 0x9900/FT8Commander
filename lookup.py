@@ -62,8 +62,8 @@ def delete_record(dbname, call):
       print(f'{call} Not found')
 
 def main():
-  config = Config()['ft8ctrl']
   parser = ArgumentParser(description="ft8ctl call sign status")
+  parser.add_argument("-c", "--config", help="Name of the configuration file")
   x_group = parser.add_mutually_exclusive_group(required=False)
   x_group.add_argument("-p", "--partial", action="store_true", default=False,
                       help="When you only have a partial callsign")
@@ -74,9 +74,14 @@ def main():
   opts = parser.parse_args()
   call = opts.call[0].upper()
 
+  config = Config(opts.config)
+  config = config['ft8ctrl']
+
   if opts.partial:
+    print(f'*** Find {call} ***')
     records = find(config.db_name, call)
   else:
+    print(f'*** Lookup {call} ***')
     records = lookup(config.db_name, call)
 
   for record in records:
