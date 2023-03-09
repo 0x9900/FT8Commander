@@ -48,13 +48,13 @@ class ZoneBase(CallSelector):
 class CQZone(ZoneBase):
 
   REQ = """
-  SELECT call, snr, distance, frequency, time FROM cqcalls
+  SELECT call, snr, distance, frequency, time, country FROM cqcalls
   WHERE status = 0 AND snr > ? AND time > ? AND cqzone {} IN ({})
   """
 
 class ITUZone(ZoneBase):
 
   REQ = """
-  SELECT call, snr, distance, frequency, time FROM cqcalls
+  SELECT call, snr, distance, frequency, time, country FROM cqcalls
   WHERE status = 0 AND snr > ? AND time > ? AND cqzone {} IN ({})
   """

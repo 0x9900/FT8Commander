@@ -16,7 +16,7 @@ from .base import CallSelector
 class CallSign(CallSelector):
 
   REQ = """
-  SELECT call, snr, distance, frequency, time FROM cqcalls
+  SELECT call, snr, distance, frequency, time, country FROM cqcalls
   WHERE status = 0 AND snr > ? AND time > ? AND call {} REGEXP ?
   """
 

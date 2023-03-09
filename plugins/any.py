@@ -13,7 +13,7 @@ from dbutils import connect_db
 class Any(CallSelector):
 
   REQ = """
-  SELECT call, snr, distance, time FROM cqcalls
+  SELECT call, snr, distance, time, country FROM cqcalls
   WHERE status = 0 AND snr > ? AND time > ?
   """
 
