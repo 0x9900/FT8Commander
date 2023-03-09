@@ -17,7 +17,7 @@ parser.add_argument("args", nargs="*")
 opts = parser.parse_args()
 
 if not opts.args:
-  for country in countries:
+  for country in sorted(countries):
     print(countries[country])
   sys.exit()
 
@@ -26,7 +26,10 @@ for ctry in (str_clean('', c).lower() for c in opts.args):
     print(f"{countries[ctry]} is a valid entity")
     continue
   ctry = ctry.upper()
-  result = dxcc.lookup(ctry)
-  if result.prefix == ctry:
-    print(f"{ctry} = {result.country} - Continent: {result.continent}, CQZone: "
-          f"{result.cqzone}, ITUZone: {result.ituzone}")
+  try:
+    result = dxcc.lookup(ctry)
+    if ctry.startswith(result.prefix):
+      print(f"{ctry} = {result.country} - Continent: {result.continent}, CQZone: "
+            f"{result.cqzone}, ITUZone: {result.ituzone}")
+  except KeyError as err:
+    print(err)
