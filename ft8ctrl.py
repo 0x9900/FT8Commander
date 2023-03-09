@@ -132,8 +132,8 @@ class Sequencer:
       if not tx_status and sequence == 14:
         data = self.selector()
         if data:
-          LOG.info('Calling: %s, SNR: %d, Distance: %d, - https://www.qrz.com/db/%s',
-                   data['call'], data['snr'], data['distance'], data['call'])
+          LOG.info('Calling: %s, From: %s, SNR: %d, Distance: %d, - https://www.qrz.com/db/%s',
+                   data['call'], data['country'], data['snr'], data['distance'], data['call'])
           self.call_station(ip_from, data['call'])
           time.sleep(1)
           self.current = data['call']
