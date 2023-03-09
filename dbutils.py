@@ -150,6 +150,9 @@ class DBInsert(Thread):
           DBInsert.write(conn, data)
         except sqlite3.OperationalError as err:
           LOG.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
+        except AttributeError as err:
+          LOG.error(err)
+          LOG.error(data)
       elif cmd == DBCommand.STATUS:
         try:
           DBInsert.status(conn, data)
