@@ -31,7 +31,7 @@ class CallSelector(ABC):
     self.min_snr = getattr(self.config, "min_snr", -50)
     self.delta = getattr(self.config, "delta", 28)
 
-    self.lotw = lambda x: True
+    self.lotw = Nothing()
     if getattr(self.config, "lotw_users_only", False):
       self.lotw = LOTW()
 
@@ -61,6 +61,12 @@ class CallSelector(ABC):
   @staticmethod
   def sort(records):
     return sorted(records, key=operator.itemgetter('snr'), reverse=True)
+
+
+class Nothing:
+
+  def __contains__(self, call):
+    return True
 
 
 class LOTW:
