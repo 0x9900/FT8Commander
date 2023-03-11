@@ -13,7 +13,7 @@ from DXEntity import DXCC
 
 class DXCC100(CallSelector):
 
-  WORKED = "SELECT country FROM cqcalls WHERE status = 2 GROUP BY country HAVING count(*) > ?"
+  WORKED = "SELECT country FROM cqcalls WHERE status = 2 GROUP BY country HAVING count(*) >= ?"
 
   REQ = """
   SELECT call, snr, distance, frequency, time, country FROM cqcalls
