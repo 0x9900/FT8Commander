@@ -44,6 +44,8 @@ ITUZone:
     - 4
     - 9
 
+# Use the tool counties.py located in this directory to have the exact
+# spelling for each country.
 Country:
   Reverse: True
   list:
