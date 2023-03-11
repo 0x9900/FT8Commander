@@ -143,7 +143,9 @@ class DBInsert(Thread):
           data['cqzone'] = dxentity.cqzone
           data['ituzone'] = dxentity.ituzone
         except KeyError:
-          data['country'] = data['continent'] = None
+          LOG.error('DXEntity for %s not found, this is probably a fake callsign "%s"',
+                    data['call'], data['packet'])
+          continue
 
         LOG.debug("DB Write: %s (%4d, %4d) %s", data['call'], lat, lon, data['country'])
         try:
