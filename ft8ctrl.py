@@ -12,6 +12,7 @@ import re
 import select
 import socket
 import time
+import sys
 
 from argparse import ArgumentParser
 from importlib import import_module
@@ -84,12 +85,25 @@ class Sequencer:
     ip_from = None
     tx_status = False
     frequency = 0
+    pause = False
     self.current = None
 
     while True:
-      fds, _, _ = select.select([self.sock], [], [], .5)
+      fds, _, _ = select.select([self.sock, sys.stdin], [], [], .5)
       sequence = int(time.time()) % 15
       for fdin in fds:
+        if fdin == sys.stdin:
+          line = fdin.readline().strip().upper()
+          if line == 'QUIT':
+            return
+          elif line == 'PAUSE':
+            pause = True
+          elif line == 'CONTINUE':
+            pause = False
+          else:
+            LOG.warning('Unknown command: %s', line)
+          continue
+
         rawdata, ip_from = fdin.recvfrom(1024)
         packet = wsjtx.ft8_decode(rawdata)
         if isinstance(packet, wsjtx.WSHeartbeat):
@@ -131,6 +145,10 @@ class Sequencer:
       ## Outside the for loop ##
       if not tx_status and sequence == 14:
         data = self.selector()
+        if pause == True:
+          LOG.warning('Paused...')
+          continue
+
         if data:
           LOG.info('Calling: %s, From: %s, SNR: %d, Distance: %d, - https://www.qrz.com/db/%s',
                    data['call'], data['country'], data['snr'], data['distance'], data['call'])
