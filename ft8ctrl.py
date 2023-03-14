@@ -94,11 +94,15 @@ class Sequencer:
       for fdin in fds:
         if fdin == sys.stdin:
           line = fdin.readline().strip().upper()
-          if line == 'QUIT':
+          if not line:
+            continue
+          elif line == 'QUIT':
             return
           elif line == 'PAUSE':
+            LOG.warning('Paused...')
             pause = True
-          elif line == 'CONTINUE':
+          elif line == 'RUN':
+            LOG.warning('Run...')
             pause = False
           else:
             LOG.warning('Unknown command: %s', line)
@@ -146,7 +150,6 @@ class Sequencer:
       if not tx_status and sequence == 14:
         data = self.selector()
         if pause == True:
-          LOG.warning('Paused...')
           continue
 
         if data:
