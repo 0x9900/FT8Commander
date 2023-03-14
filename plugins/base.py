@@ -5,10 +5,10 @@
 # All rights reserved.
 #
 
+import dbm.gnu as gdbm
 import logging
 import operator
 import os
-import pickle
 import time
 
 from abc import ABC, abstractmethod
@@ -18,8 +18,8 @@ from urllib import request
 from config import Config
 
 LOTW_URL = 'https://lotw.arrl.org/lotw-user-activity.csv'
-LOTW_CACHE = '/tmp/lotw_cache.pkl'
-LOTW_EXPIRE = (7 * 86400)
+LOTW_CACHE = '/tmp/lotw_cache.gdbm'
+LOTW_EXPIRE = 10 # (7 * 86400)
 
 class CallSelector(ABC):
 
@@ -79,26 +79,41 @@ class LOTW:
       st = os.stat(LOTW_CACHE)
       if time.time() > st.st_mtime + LOTW_EXPIRE:
         raise FileNotFoundError
-      with open(LOTW_CACHE, 'rb') as lfd:
-        self._users = pickle.load(lfd)
     except (FileNotFoundError, EOFError):
       self.log.info('LOTW cache expired. Reload...')
       with request.urlopen(LOTW_URL) as response:
         if response.status != 200:
           raise SystemError('Download error')
-        charset = response.info().get_content_charset('utf-8')
-        for line in (r.decode(charset) for r in response):
-          fields = line.split(',')
-          self._users.add(fields[0].strip())
-
-      with open(LOTW_CACHE, 'wb') as lfd:
-        pickle.dump(self._users, lfd)
+        self.store_lotw(response)
     self.log.info('LOTW lookup database ready')
 
-  def __contains__(self, call):
-    _call = call.upper().strip()
-    self.log.info('%s in LOTW: %s', _call, _call in self._users)
-    return _call in self._users
+  def store_lotw(self, response):
+    charset = response.info().get_content_charset('utf-8')
+    try:
+      with gdbm.open(LOTW_CACHE, 'c') as fdb:
+        for line in (r.decode(charset) for r in response):
+          fields = [f.strip() for f in line.split(',')]
+          fdb[fields[0].upper()] = fields[1]
+    except gdbm.error as err:
+      self.log.error(err)
+      raise IOError from err
+
+  def __contains__(self, key):
+    try:
+      with gdbm.open(LOTW_CACHE, 'r') as fdb:
+        return key in fdb
+    except gdbm.error as err:
+      logging.error(err)
+      raise SystemError(err) from None
 
   def __repr__(self):
-    return f"<class LOTW> number of LOTW users: {len(self._users)}"
+    try:
+      st = os.stat(LOTW_CACHE)
+      fdate = float(st.st_mtime)
+      expire = LOTW_EXPIRE - int(time.time() - fdate)
+      if expire < 1:
+        raise IOError
+    except IOError:
+      return '<class LOTW> number of LOTW cache "Expired"'
+
+    return f"<class LOTW> number of LOTW cache expire in: {expire} seconds"
