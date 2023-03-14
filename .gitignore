@@ -6,6 +6,8 @@ m.py
 ft8ctrl.yaml
 *.ipynb
 
+ALL.TXT
+
 # C extensions
 *.so
 
