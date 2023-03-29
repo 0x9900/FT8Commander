@@ -27,6 +27,8 @@ QSO.
 
 ## Misc
 
+### Logging
+
 The following AppleScript example will automatically click on the Logging window.
 ** Note: Another application might steal the focus from the logging window, and the OK button might not be pressed on time. **
 
@@ -53,6 +55,13 @@ tell application "System Events"
 	end repeat
 end tell
 ```
+
+### Calling CQ
+
+The following AppleScript calls CQ and logs any contact.<br>
+_Courtesy of my friend JC (W6IPA)_
+
+The original version can be found on [gist][1].
 
 ```
 set bundleId to "org.k1jt.wsjtx"
@@ -96,3 +105,5 @@ end tell
 ```
 
 [^1]: Signal To Noize Ratio
+
+[1]: https://gist.github.com/jc-m/f4ae181cdbac7adc8621e93a0c26c8e5
