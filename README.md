@@ -54,5 +54,45 @@ tell application "System Events"
 end tell
 ```
 
+```
+set bundleId to "org.k1jt.wsjtx"
+tell application id bundleId to activate
+
+tell application "System Events"
+	repeat
+		tell application process "WSJT-X"
+			set winList to every window
+			set frontmost to true
+		end tell
+		repeat with win in winList
+			set theTitle to name of win
+			if theTitle contains "Log QSO" then
+				tell application process "WSJT-X"
+					click button "Ok" of group 1 of win
+				end tell
+				say "Contact Logged"
+			else if theTitle starts with "WSJT-X" and theTitle does not contain "Wide Graph" then
+				tell application process "WSJT-X"
+					set chkBox to value of checkbox "Enable Tx" of win as boolean
+				end tell
+
+				if not chkBox then
+					delay 30
+					perform action "AXRaise" of win
+
+					tell application process "WSJT-X"
+						click button "Set Rx frequency to Tx Frequency" of group 1 of win
+					end tell
+
+					say "Calling CQ"
+					tell application "System Events" to key code 122
+				end if
+			end if
+			delay 1
+		end repeat
+		delay 5
+	end repeat
+end tell
+```
 
 [^1]: Signal To Noize Ratio
