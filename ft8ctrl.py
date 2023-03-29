@@ -122,7 +122,12 @@ class Sequencer:
           log_sock.sendto(packet.raw(), ('127.0.0.1', 2237))
 
         elif isinstance(packet, wsjtx.WSDecode):
-          name, match = self.parser(packet.Message)
+          try:
+            name, match = self.parser(packet.Message)
+          except TypeError as err:
+            log.error('Error: %s - Message: %s', err, packet.Message)
+            continue
+
           if name is None:
             continue
           if name == 'REPLY' and match['call'] == self.current and match['to'] != self.mycall:
@@ -153,7 +158,7 @@ class Sequencer:
           continue
 
         if data:
-          LOG.info('Calling: %s, From: %s, SNR: %d, Distance: %d, - https://www.qrz.com/db/%s',
+          LOG.info('Calling: %s, From: %s, SNR: %d, Distance: %d - https://www.qrz.com/db/%s',
                    data['call'], data['country'], data['snr'], data['distance'], data['call'])
           self.call_station(ip_from, data['call'])
           time.sleep(1)

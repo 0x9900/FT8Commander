@@ -147,7 +147,8 @@ class DBInsert(Thread):
                     data['call'], data['packet'])
           continue
 
-        LOG.debug("DB Write: %s (%4d, %4d) %s", data['call'], lat, lon, data['country'])
+        LOG.debug("DB Write: %s, %s, %s", data['call'], data['country'], data['continent'],
+                  data['grid'])
         try:
           DBInsert.write(conn, data)
         except sqlite3.OperationalError as err:
