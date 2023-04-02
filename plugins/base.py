@@ -19,7 +19,10 @@ from config import Config
 
 LOTW_URL = 'https://lotw.arrl.org/lotw-user-activity.csv'
 LOTW_CACHE = '/tmp/lotw_cache.gdbm'
-LOTW_EXPIRE = 10 # (7 * 86400)
+LOTW_EXPIRE = (7 * 86400)
+
+MIN_SNR = -50
+MAX_SNR = +50
 
 class CallSelector(ABC):
 
@@ -28,12 +31,15 @@ class CallSelector(ABC):
     self.config = config.get(self.__class__.__name__)
     self.db_name = config['ft8ctrl.db_name']
     self.log = logging.getLogger(self.__class__.__name__)
-    self.min_snr = getattr(self.config, "min_snr", -50)
+    self.min_snr = getattr(self.config, "min_snr", MIN_SNR)
+    self.max_snr = getattr(self.config, "max_snr", MAX_SNR)
     self.delta = getattr(self.config, "delta", 28)
 
-    self.lotw = Nothing()
     if getattr(self.config, "lotw_users_only", False):
       self.lotw = LOTW()
+      self.log.info('Reply to LOTW users only')
+    else:
+      self.lotw = Nothing()
 
 
   @abstractmethod

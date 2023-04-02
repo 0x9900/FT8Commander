@@ -17,12 +17,12 @@ class DXCC100(CallSelector):
 
   REQ = """
   SELECT call, snr, distance, frequency, time, country FROM cqcalls
-  WHERE status = 0 AND snr > ? AND time > ? and country not in ({})
+  WHERE status = 0 AND snr >= ? AND snr <= ? AND time > ? and country not in ({})
   """
 
   def __init__(self):
     super().__init__()
-    self.work_count = getattr(self.config, "work_count", 2)
+    self.worked_count = getattr(self.config, "worked_count", 2)
 
 
   def get(self):
@@ -30,9 +30,9 @@ class DXCC100(CallSelector):
     start = datetime.utcnow() - timedelta(seconds=self.delta)
     with connect_db(self.db_name) as conn:
       curs = conn.cursor()
-      worked = curs.execute(self.WORKED, (self.work_count,))
+      worked = curs.execute(self.WORKED, (self.worked_count,))
       req = self.REQ.format(','.join(f"\"{c['country']}\"" for c in worked))
-      curs.execute(req, (self.min_snr, start))
+      curs.execute(req, (self.min_snr, self.max_snr, start))
       for record in (dict(r) for r in curs):
         record['coef'] = self.coefficient(record['distance'], record['snr'])
         records.append(record)

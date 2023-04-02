@@ -18,17 +18,30 @@ ft8ctrl:
 
 #
 # Selectors plugins configuration.
-# Use "Reverse: True" for not in the list
 #
+# Use "reverse: True" for "not" in the list
+# All the plugins can use the following options:
+# min_snr, max_snr
+# lotw_users_only # will only work stations that are registered LOTW users.
+
+Any:
+  min_snr: -18
+  max_snr: 3
+  lotw_users_only: True
+
 Grid:
   regexp: ^[EF][NM].*
 
 CallSign:
-  Reverse: True
-  regexp: ^[WK](\w|)\d
+  reverse: False
+  # regexp: ^CO8LY
+  regexp: ^[WKN](\w|)\d\w+
 
+#
+# Use "Reverse: True" for not in the list
+#
 CQZone:
-  Reverse: False
+  reverse: False
   list:
     - 14
     - 11
@@ -37,6 +50,7 @@ CQZone:
     - 9
 
 ITUZone:
+  reverse: True
   list:
     - 14
     - 11
@@ -44,20 +58,25 @@ ITUZone:
     - 4
     - 9
 
-# Use the tool counties.py located in this directory to have the exact
-# spelling for each country.
 Country:
-  Reverse: True
+  min_snr: -21
+  reverse: True
   list:
-    - United States
+    - Asiatic Russia
+    - European Russia
     - Canada
+    - Mexico
+    - United States
 
 Continent:
+  min_snr: -17
+  lotw_users_only: True
   list:
-    - AF
     - EU
+    - OC
+    - AS
 
 DXCC100:
-  min_snr: -17
-  work_count: 2
-  lotw_users_only: True
+  min_snr: -21
+  worked_count: 4
+  lotw_users_only: False

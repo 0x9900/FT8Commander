@@ -17,7 +17,7 @@ class CallSign(CallSelector):
 
   REQ = """
   SELECT call, snr, distance, frequency, time, country FROM cqcalls
-  WHERE status = 0 AND snr > ? AND time > ? AND call {} REGEXP ?
+  WHERE status = 0 AND snr >= ? AND snr <= ? AND time > ? AND call {} REGEXP ?
   """
 
   def __init__(self):
@@ -32,7 +32,7 @@ class CallSign(CallSelector):
     start = datetime.utcnow() - timedelta(seconds=self.delta)
     with self.conn:
       curs = self.conn.cursor()
-      curs.execute(self.req, (self.min_snr, start, self.expr))
+      curs.execute(self.req, (self.min_snr, self.max_snr, start, self.expr))
       for record in (dict(r) for r in curs):
         record['coef'] = self.coefficient(record['distance'], record['snr'])
         records.append(record)

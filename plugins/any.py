@@ -13,8 +13,8 @@ from dbutils import connect_db
 class Any(CallSelector):
 
   REQ = """
-  SELECT call, snr, distance, time, country FROM cqcalls
-  WHERE status = 0 AND snr > ? AND time > ?
+  SELECT call, snr, distance, frequency, time, country FROM cqcalls
+  WHERE status = 0 AND snr >= ? AND snr <= ? AND time > ?
   """
 
   def __init__(self):
@@ -25,7 +25,7 @@ class Any(CallSelector):
     start = datetime.utcnow() - timedelta(seconds=self.delta)
     with connect_db(self.db_name) as conn:
       curs = conn.cursor()
-      curs.execute(self.REQ, (self.min_snr, start))
+      curs.execute(self.REQ, (self.min_snr, self.max_snr, start))
       for record in (dict(r) for r in curs):
         record['coef'] = self.coefficient(record['distance'], record['snr'])
         records.append(record)
