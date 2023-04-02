@@ -26,6 +26,7 @@ class DXCC100(CallSelector):
 
 
   def get(self):
+    super().get()
     records = []
     start = datetime.utcnow() - timedelta(seconds=self.delta)
     with connect_db(self.db_name) as conn:
@@ -36,5 +37,31 @@ class DXCC100(CallSelector):
       for record in (dict(r) for r in curs):
         record['coef'] = self.coefficient(record['distance'], record['snr'])
         records.append(record)
+
+    return self.get_record(records)
+
+
+class POTA(CallSelector):
+
+  REQ = """
+  SELECT call, snr, distance, frequency, time, country FROM cqcalls
+  WHERE status = 0 AND snr >= ? AND snr <= ? AND time > ? and extra {} "POTA"
+  """
+
+  def __init__(self):
+    super().__init__()
+    self.req =  self.REQ.format("!=" if self.isreverse() else "=")
+
+  def get(self):
+    super().get()
+    records = []
+    start = datetime.utcnow() - timedelta(seconds=self.delta)
+    with connect_db(self.db_name) as conn:
+      curs = conn.cursor()
+      curs.execute(self.req, (self.min_snr, self.max_snr, start))
+      for record in (dict(r) for r in curs):
+        record['coef'] = self.coefficient(record['distance'], record['snr'])
+        records.append(record)
+        self.log.debug(dict(record))
 
     return self.get_record(records)

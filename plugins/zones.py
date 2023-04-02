@@ -32,6 +32,7 @@ class ZoneBase(CallSelector):
     self.conn = connect_db(self.db_name)
 
   def get(self):
+    super().get()
     records = []
     start = datetime.utcnow() - timedelta(seconds=self.delta)
     with connect_db(self.db_name) as conn:

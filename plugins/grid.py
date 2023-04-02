@@ -28,6 +28,7 @@ class Grid(CallSelector):
     self.reverse = self.isreverse()
 
   def get(self):
+    super().get()
     records = []
     start = datetime.utcnow() - timedelta(seconds=self.delta)
     with self.conn:

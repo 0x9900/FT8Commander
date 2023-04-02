@@ -28,6 +28,7 @@ class CallSign(CallSelector):
     self.req =  self.REQ.format(self.isreverse())
 
   def get(self):
+    super().get()
     records = []
     start = datetime.utcnow() - timedelta(seconds=self.delta)
     with self.conn:

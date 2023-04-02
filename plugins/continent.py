@@ -19,6 +19,7 @@ class LandBase(CallSelector):
     super().__init__()
 
   def get(self):
+    super().get()
     records = []
     start = datetime.utcnow() - timedelta(seconds=self.delta)
     with connect_db(self.db_name) as conn:
