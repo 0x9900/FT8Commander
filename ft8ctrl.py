@@ -158,16 +158,11 @@ class Sequencer:
           continue
 
         if data:
-          LOG.info(('Calling: %s, From: %s, SNR: %d, Distance: %d, Frequency: %d MHz '
-                    '- https://www.qrz.com/db/%s'),
-                   data['call'], data['country'], data['snr'], data['distance'],
-                   data['frequency'] / 10**6, data['call'])
           self.call_station(ip_from, data['call'])
           time.sleep(1)
           self.current = data['call']
         else:
           self.current = None
-          LOG.debug('No call selected')
 
 
 class Plugins:
@@ -186,13 +181,17 @@ class Plugins:
       self.call_select.append(klass())
 
   def __call__(self):
-    call = None
     for selector in self.call_select:
-      call = selector.get()
-      if call:
-        LOG.debug('Selector: %s (%s)', selector.__class__.__name__, call['call'])
-        break
-    return call
+      data = selector.get()
+      if not data:
+        continue
+      name = selector.__class__.__name__
+      LOG.info(('Calling: %s, From: %s, SNR: %d, Distance: %d, Frequency: %d MHz '
+                'Selector: %s - https://www.qrz.com/db/%s'),
+               data['call'], data['country'], data['snr'], data['distance'],
+               data['frequency'] / 10**6, name, data['call'])
+      return data
+    return None
 
 
 def main():
