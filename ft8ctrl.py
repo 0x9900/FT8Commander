@@ -47,8 +47,6 @@ class Sequencer:
     self.sock.bind((bind_addr, config.wsjt_port))
 
   def call_station(self, ip_from, data):
-    if not data:
-      return
     pkt = data['packet']
     packet = wsjtx.WSReply()
     packet.call = data['call']
