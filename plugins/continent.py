@@ -7,76 +7,55 @@
 
 from datetime import datetime, timedelta
 
-from dbutils import connect_db
 from .base import CallSelector
 from DXEntity import DXCC
 
-class LandBase(CallSelector):
-
-  REQ = 'select 1'
-
-  def __init__(self):
-    super().__init__()
-
-  def get(self):
-    super().get()
-    records = []
-    start = datetime.utcnow() - timedelta(seconds=self.delta)
-    with connect_db(self.db_name) as conn:
-      curs = conn.cursor()
-      curs.execute(self.req, (self.min_snr, self.max_snr, start))
-      for record in (dict(r) for r in curs):
-        record['coef'] = self.coefficient(record['distance'], record['snr'])
-        records.append(record)
-
-    return self.get_record(records)
-
-
-class Continent(LandBase):
-
-  REQ = """
-  SELECT call, snr, distance, frequency, time, country FROM cqcalls
-  WHERE status = 0 AND snr >= ? AND snr <= ? AND time > ? AND continent {} in ({})
-  """
+class Continent(CallSelector):
 
   CONTINENTS = ["AF", "AS", "EU", "NA", "OC", "SA"]
 
   def __init__(self):
     super().__init__()
-    c_list = set([])
-    continent = self.config.list
-    if isinstance(continent, str):
-      continent = [continent]
-    for cnt in continent:
-      if cnt not in self.CONTINENTS:
-        self.log.warning('Ignoring continent: "%s" is not valid', cnt)
+    self.c_list = set([])
+    self.reverse = getattr(self.config, 'reverse', False)
+    continents = getattr(self.config, 'list', [])
+    continents = [continents] if isinstance(continents, str) else continents
+
+    for cnt in continents:
+      if cnt in self.CONTINENTS:
+        self.c_list.add(cnt)
       else:
-        c_list.add(f'"{cnt}"')
-
-    self.req = self.REQ.format(self.isreverse(), ','.join(c_list))
-    self.conn = connect_db(self.db_name)
+        self.log.warning('Ignoring continent: "%s" is not valid', cnt)
 
 
-class Country(LandBase):
+  def get(self):
+    records = []
+    for record in super().get():
+      self.log.debug(record)
+      if (record['continent'] in self.c_list) ^ self.reverse:
+        records.append(record)
+    return self.select_record(records)
 
-  REQ = """
-  SELECT call, snr, distance, frequency, time, country FROM cqcalls
-  WHERE status = 0 AND snr >= ? AND snr <= ? AND time > ? AND country {} in ({})
-  """
+class Country(CallSelector):
 
   def __init__(self):
     super().__init__()
-    c_list = set([])
     dxcc = DXCC()
-    entities = self.config.list
-    if isinstance(entities, str):
-      entities = [entities]
+    self.c_list = set([])
+    self.reverse = getattr(self.config, 'reverse', False)
+    entities = getattr(self.config, 'list', [])
+    entities = [self.config.list] if isinstance(entities, str) else self.config.list
 
     for country in entities:
-      if not dxcc.isentity(country):
-        self.log.warning('Ignoring country: "%s" is not a valid entity', country)
+      if dxcc.isentity(country):
+        self.c_list.add(country)
       else:
-        c_list.add(f'"{country}"')
+        self.log.warning('Ignoring country: "%s" is not a valid entity', country)
 
-    self.req = self.REQ.format(self.isreverse(), ','.join(c_list))
-    self.conn = connect_db(self.db_name)
+  def get(self):
+    records = []
+    for record in super().get():
+      self.log.debug(record)
+      if (record['country'] in self.c_list) ^ self.reverse:
+        records.append(record)
+    return self.select_record(records)

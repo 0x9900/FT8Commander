@@ -13,9 +13,11 @@ import time
 
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
+from functools import update_wrapper
 from urllib import request
 
 from config import Config
+from dbutils import connect_db
 
 LOTW_URL = 'https://lotw.arrl.org/lotw-user-activity.csv'
 LOTW_CACHE = '/tmp/lotw_cache.gdbm'
@@ -24,16 +26,40 @@ LOTW_EXPIRE = (7 * 86400)
 MIN_SNR = -50
 MAX_SNR = +50
 
+class SingleObjectCache():
+  __slots__ = ['_data', '_age', 'maxage']
+
+  def __init__(self, maxage=7):
+    self.maxage = maxage
+    self._data = None
+    self._age = 0
+
+  def __call__(self, func):
+    def wrapper(*args, **kwargs):
+      now = time.time()
+      if self._age + self.maxage < now:
+        self._data = func(*args, **kwargs)
+        self._age = now
+      return self._data
+    return update_wrapper(wrapper, func)
+
+
 class CallSelector(ABC):
+
+  REQ = "SELECT * FROM cqcalls WHERE status = 0 AND snr >= ? AND snr <= ? AND time > ?"
 
   def __init__(self):
     config = Config()
     self.config = config.get(self.__class__.__name__)
     self.db_name = config['ft8ctrl.db_name']
-    self.log = logging.getLogger(self.__class__.__name__)
     self.min_snr = getattr(self.config, "min_snr", MIN_SNR)
     self.max_snr = getattr(self.config, "max_snr", MAX_SNR)
-    self.delta = getattr(self.config, "delta", 28)
+    self.delta = getattr(self.config, "delta", 29)
+    self.debug = getattr(self.config, "debug", False)
+
+    self.log = logging.getLogger(self.__class__.__name__)
+    if self.debug:
+      self.log.setLevel(logging.DEBUG)
 
     if getattr(self.config, "lotw_users_only", False):
       self.lotw = LOTW()
@@ -41,17 +67,24 @@ class CallSelector(ABC):
     else:
       self.lotw = Nothing()
 
-
   @abstractmethod
   def get(self):
-    pass
+    return self._get()
 
-  def isreverse(self):
-    if hasattr(self.config, 'reverse') and self.config.reverse:
-      return 'NOT'
-    return ''
+  @SingleObjectCache()
+  def _get(self):
+    records = []
+    start = datetime.utcnow() - timedelta(seconds=self.delta)
+    with connect_db(self.db_name) as conn:
+      curs = conn.cursor()
+      curs.execute(self.REQ, (self.min_snr, self.max_snr, start))
+      for record in (dict(r) for r in curs):
+        record['coef'] = self.coefficient(record['distance'], record['snr'])
+        self.log.debug(dict(record))
+        records.append(record)
+    return records
 
-  def get_record(self, records):
+  def select__record(self, records):
     records = self.sort(records)
     for record in records:
       self.log.debug('%s is not an lotw user', record['call'])

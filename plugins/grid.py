@@ -8,38 +8,19 @@
 
 import re
 
-from datetime import datetime, timedelta
-
-from dbutils import connect_db
 from .base import CallSelector
 
 class Grid(CallSelector):
 
-  REQ = """
-  SELECT call, snr, distance, frequency, time FROM cqcalls
-  WHERE status = 0 AND snr >= ? AND snr <= ? AND time > ? AND grid ? REGEXP ?
-  """
-
   def __init__(self):
     super().__init__()
-    self.conn = connect_db(self.db_name)
-    self.conn.create_function('regexp', 2, Grid.regexp)
-    self.expr = self.config.regexp
-    self.reverse = self.isreverse()
+    self.expr = re.compile(self.config.regexp)
+    self.reverse = getattr(self.config, 'reverse', False)
 
   def get(self):
-    super().get()
     records = []
-    start = datetime.utcnow() - timedelta(seconds=self.delta)
-    with self.conn:
-      curs = self.conn.cursor()
-      curs.execute(self.REQ, (self.min_snr, self.max_snr, start, self.reverse(), self.expr))
-      for record in (dict(r) for r in curs):
-        record['coef'] = self.coefficient(record['distance'], record['snr'])
+    for record in super().get():
+      if bool(self.expr.search(record['grid'])) ^ self.reverse:
         records.append(record)
 
-    return self.get_record(records)
-
-  @staticmethod
-  def regexp(expr, data):
-    return 1 if re.search(expr, data) else 0
+    return self.select_record(records)
