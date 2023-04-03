@@ -26,7 +26,7 @@ LOTW_EXPIRE = (7 * 86400)
 MIN_SNR = -50
 MAX_SNR = +50
 
-class ObjectCache():
+class SingleObjectCache():
   __slots__ = ['_data', '_age', 'maxage']
 
   def __init__(self, maxage=7):
@@ -71,7 +71,7 @@ class CallSelector(ABC):
   def get(self):
     return self._get()
 
-  @ObjectCache()
+  @SingleObjectCache()
   def _get(self):
     records = []
     start = datetime.utcnow() - timedelta(seconds=self.delta)
@@ -84,12 +84,7 @@ class CallSelector(ABC):
         records.append(record)
     return records
 
-  def isreverse(self):
-    if hasattr(self.config, 'reverse') and self.config.reverse:
-      return 'NOT'
-    return ''
-
-  def get_record(self, records):
+  def select__record(self, records):
     records = self.sort(records)
     for record in records:
       self.log.debug('%s is not an lotw user', record['call'])

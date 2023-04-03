@@ -14,4 +14,4 @@ class Any(CallSelector):
 
   def get(self):
     records = super().get()
-    return self.get_record(records)
+    return self.select_record(records)

@@ -34,7 +34,7 @@ class Continent(CallSelector):
       self.log.debug(record)
       if (record['continent'] in self.c_list) ^ self.reverse:
         records.append(record)
-    return self.get_record(records)
+    return self.select_record(records)
 
 class Country(CallSelector):
 
@@ -58,4 +58,4 @@ class Country(CallSelector):
       self.log.debug(record)
       if (record['country'] in self.c_list) ^ self.reverse:
         records.append(record)
-    return self.get_record(records)
+    return self.select_record(records)

@@ -23,4 +23,4 @@ class Grid(CallSelector):
       if bool(self.expr.search(record['grid'])) ^ self.reverse:
         records.append(record)
 
-    return self.get_record(records)
+    return self.select_record(records)

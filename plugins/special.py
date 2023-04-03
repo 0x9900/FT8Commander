@@ -32,7 +32,7 @@ class DXCC100(CallSelector):
         self.log.debug('Selected: %s', record['call'])
         records.append(record)
 
-    return self.get_record(records)
+    return self.select_record(records)
 
 
 class POTA(CallSelector):
@@ -45,4 +45,4 @@ class POTA(CallSelector):
     for record in super().get():
       if record['extra'] and record['extra'].upper() == 'POTA':
         records.append(record)
-    return self.get_record(records)
+    return self.select_record(records)

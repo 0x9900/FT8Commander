@@ -27,7 +27,7 @@ class ZoneSelector(CallSelector):
     for record in super().get():
       if (record[field] in self.z_list) ^ self.reverse:
         records.append(record)
-    return self.get_record(records)
+    return self.select_record(records)
 
 
 class CQZone(ZoneSelector):
