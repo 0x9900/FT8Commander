@@ -84,7 +84,7 @@ class CallSelector(ABC):
         records.append(record)
     return records
 
-  def select__record(self, records):
+  def select_record(self, records):
     records = self.sort(records)
     for record in records:
       self.log.debug('%s is not an lotw user', record['call'])
