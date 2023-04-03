@@ -5,57 +5,42 @@
 # All rights reserved.
 #
 
-from datetime import datetime, timedelta
-
-from dbutils import connect_db
 from .base import CallSelector
 
-class ZoneBase(CallSelector):
-
-  REQ = 'select 1'
-
+class ZoneSelector(CallSelector):
   def __init__(self):
     super().__init__()
-    zones_list = []
-    cfg_list = self.config.list
-    if isinstance(cfg_list, str):
-      cfg_list = [cfg_list]
+    self.reverse = getattr(self.config, 'reverse', False)
+    zones_list = getattr(self.config, 'list', [])
+    zones_list = [zones_list] if isinstance(zones_list, str) else zones_list
+    self.z_list = set([])
 
-    # Make sure zones are integer. Ignore the non integer values.
-    for zone in cfg_list:
+    # Make sure zones are integers. Ignore the non integer values.
+    for zone in zones_list:
       try:
-        zones_list.append(str(int(zone)))
+        self.z_list.add(str(int(zone)))
       except ValueError:
-        self.log.warning('Zone "%s" is not a integer', zone)
+        self.log.warning('%s "%s" is not a integer', self.__class__.__name__, zone)
 
-    self.req = self.REQ.format(self.isreverse(), ','.join(zones_list))
-    self.conn = connect_db(self.db_name)
-
-  def get(self):
-    super().get()
+  def get(self, field):
     records = []
-    start = datetime.utcnow() - timedelta(seconds=self.delta)
-    with connect_db(self.db_name) as conn:
-      curs = conn.cursor()
-      curs.execute(self.req, (self.min_snr, self.max_snr, start))
-      for record in (dict(r) for r in curs):
-        record['coef'] = self.coefficient(record['distance'], record['snr'])
+    for record in super().get():
+      if (record[field] in self.z_list) ^ self.reverse:
         records.append(record)
-
-
     return self.get_record(records)
 
 
-class CQZone(ZoneBase):
+class CQZone(ZoneSelector):
+  def __init__(self):
+    super().__init__()
 
-  REQ = """
-  SELECT call, snr, distance, frequency, time, country FROM cqcalls
-  WHERE status = 0 AND snr >= ? AND snr <= ? AND time > ? AND cqzone {} IN ({})
-  """
+  def get(self):
+    return super().get('cqzone')
 
-class ITUZone(ZoneBase):
 
-  REQ = """
-  SELECT call, snr, distance, frequency, time, country FROM cqcalls
-  WHERE status = 0 AND snr >= ? AND snr <= ? AND time > ? AND cqzone {} IN ({})
-  """
+class ITUZone(ZoneSelector):
+  def __init__(self):
+    super().__init__()
+
+  def get(self):
+    return super().get('ituzone')

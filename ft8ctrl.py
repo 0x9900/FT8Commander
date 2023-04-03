@@ -20,7 +20,7 @@ from queue import Queue
 
 import wsjtx
 
-from dbutils import create_db, get_call, DBInsert, Purge
+from dbutils import create_db, DBInsert, Purge
 from dbutils import DBCommand
 
 from config import Config
@@ -46,8 +46,7 @@ class Sequencer:
     self.sock.setblocking(False) # Set socket to non-blocking mode
     self.sock.bind((bind_addr, config.wsjt_port))
 
-  def call_station(self, ip_from, call):
-    data = get_call(self.db_name, call)
+  def call_station(self, ip_from, data):
     if not data:
       return
     pkt = data['packet']
@@ -158,7 +157,7 @@ class Sequencer:
           continue
 
         if data:
-          self.call_station(ip_from, data['call'])
+          self.call_station(ip_from, data)
           time.sleep(1)
           self.current = data['call']
         else:
