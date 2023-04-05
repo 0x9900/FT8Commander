@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import re
 import sys
+import textwrap
 
 from argparse import ArgumentParser
 
@@ -9,8 +9,10 @@ import DXEntity
 
 dxcc = DXEntity.DXCC()
 
-str_clean = re.compile(r'\W').sub
-countries = {str_clean('', c).lower():c for c in dxcc.entities}
+countries = dxcc.entities
+
+wrapper = textwrap.TextWrapper()
+wrapper.subsequent_indent = wrapper.initial_indent = " >  "
 
 parser = ArgumentParser(description="Send e-QSL cards")
 parser.add_argument("args", nargs="*")
@@ -21,9 +23,12 @@ if not opts.args:
     print(countries[country])
   sys.exit()
 
-for ctry in (str_clean('', c).lower() for c in opts.args):
+for ctry in opts.args:
   if ctry in countries:
-    print(f"{countries[ctry]} is a valid entity")
+    print(f"{ctry} is a valid entity")
+    prefixes = ', '.join(dxcc.get_entity(ctry))
+    print('\n'.join(wrapper.wrap(prefixes)))
+
     continue
   ctry = ctry.upper()
   try:
