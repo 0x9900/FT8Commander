@@ -122,7 +122,7 @@ class Sequencer:
           try:
             name, match = self.parser(packet.Message)
           except TypeError as err:
-            log.error('Error: %s - Message: %s', err, packet.Message)
+            LOG.error('Error: %s - Message: %s', err, packet.Message)
             continue
 
           if name is None:
