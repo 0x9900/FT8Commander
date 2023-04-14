@@ -14,12 +14,12 @@ from config import Config
 from dbutils import connect_db
 
 REQ_RE = '''
-SELECT call, status, snr, grid, cqzone, ituzone, country, continent, time, frequency
+SELECT call, status, snr, grid, cqzone, ituzone, country, continent, time, frequency, extra, packet
 FROM cqcalls WHERE call REGEXP ?
 '''
 
 REQ_LU = '''
-SELECT call, status, snr, grid, cqzone, ituzone, country, continent, time, frequency
+SELECT call, status, snr, grid, cqzone, ituzone, country, continent, time, frequency, extra, packet
 FROM cqcalls WHERE call = ?
 '''
 
@@ -32,7 +32,10 @@ def show_record(rec):
   if not rec:
     return
   for key in rec.keys():
+    if key == 'packet':
+      continue
     print(f"{key.title():<10}: {rec[key]}")
+  print(f'Message   : {rec["packet"]["Message"]}')
   print('-' * 79)
 
 def find(dbname, call):
