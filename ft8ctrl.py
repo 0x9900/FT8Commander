@@ -162,7 +162,7 @@ class Sequencer:
           self.current = None
 
 
-class Plugins:
+class LoadPlugins:
 
   def __init__(self, plugins):
     """Load and initialize plugins"""
@@ -222,7 +222,7 @@ def main():
   db_purge.start()
 
   LOG.info('Call selector: %s', config.call_selector)
-  call_select = Plugins(config.call_selector)
+  call_select = LoadPlugins(config.call_selector)
   main_loop = Sequencer(config, queue, call_select)
   try:
     main_loop.run()
