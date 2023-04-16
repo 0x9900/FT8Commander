@@ -71,13 +71,17 @@ class DXCC:
       cdb['_meta_data_'] = marshal.dumps([dict(self._entities), self._max_len])
 
   def lookup(self, call):
+    _, info = self.get_prefix(call)
+    return info
+
+  def get_prefix(self, call):
     call = call.upper()
     prefixes = list({call[:c] for c in range(self._max_len, 0, -1)})
     prefixes.sort(key=lambda x: -len(x))
     with dbm.open(self._db, 'r') as cdb:
       for prefix in prefixes:
         if prefix in cdb:
-          return DXCCRecord(marshal.loads(cdb[prefix]))
+          return (prefix, DXCCRecord(marshal.loads(cdb[prefix])))
     raise KeyError(f"{call} not found")
 
   def isentity(self, country):

@@ -18,8 +18,8 @@ def list():
 def get_prefix(prefix):
   dxcc = DXEntity.DXCC()
   prefix = prefix.upper()
-  result = dxcc.lookup(prefix)
-  print(f"{prefix} > {result.prefix} = {result.country} - Continent: {result.continent}, CQZone: "
+  match, result = dxcc.get_prefix(prefix)
+  print(f"Call prefix: {match} > {result.prefix} = {result.country} - Continent: {result.continent}, CQZone: "
         f"{result.cqzone}, ITUZone: {result.ituzone}")
 
 def check(ctry):
