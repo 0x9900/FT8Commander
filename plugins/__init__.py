@@ -14,3 +14,4 @@ from .zones import CQZone
 from .zones import ITUZone
 from .special import DXCC100
 from .special import POTA
+from .special import VOTA

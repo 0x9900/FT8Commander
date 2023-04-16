@@ -46,3 +46,16 @@ class POTA(CallSelector):
       if record['extra'] and record['extra'].upper() == 'POTA':
         records.append(record)
     return self.select_record(records)
+
+
+class VOTA(CallSelector):
+
+  def __init__(self):
+    super().__init__()
+
+  def get(self):
+    records = []
+    for record in super().get():
+      if record['extra'] and record['extra'].upper() == 'VOTA':
+        records.append(record)
+    return self.select_record(records)
