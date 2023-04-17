@@ -80,3 +80,9 @@ DXCC100:
   min_snr: -21
   worked_count: 4
   lotw_users_only: False
+
+POTA:
+  min_snr: -17
+
+VOTA:
+  min_snr: -17
