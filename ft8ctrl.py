@@ -183,7 +183,7 @@ class LoadPlugins:
       if not data:
         continue
       name = selector.__class__.__name__
-      LOG.info(('Calling: %s, From: %s, SNR: %d, Distance: %d, Frequency: %d MHz '
+      LOG.info(('Calling: %s, From: %s, SNR: %d, Distance: %d, Frequency: %d MHz, '
                 'Selector: %s - https://www.qrz.com/db/%s'),
                data['call'], data['country'], data['snr'], data['distance'],
                data['frequency'] / 10**6, name, data['call'])
@@ -221,7 +221,7 @@ def main():
   db_purge.daemon = True
   db_purge.start()
 
-  LOG.info('Call selector: %s', config.call_selector)
+  LOG.info('Call selector: %s', ', '.join(config.call_selector))
   call_select = LoadPlugins(config.call_selector)
   main_loop = Sequencer(config, queue, call_select)
   try:
