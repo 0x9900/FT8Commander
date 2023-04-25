@@ -35,27 +35,16 @@ class DXCC100(CallSelector):
     return self.select_record(records)
 
 
-class POTA(CallSelector):
+class Extra(CallSelector):
 
   def __init__(self):
     super().__init__()
+    self.reverse = getattr(self.config, 'reverse', False)
+    self.ex_list = set(getattr(self.config, 'list', []))
 
   def get(self):
     records = []
     for record in super().get():
-      if record['extra'] and record['extra'].upper() == 'POTA':
-        records.append(record)
-    return self.select_record(records)
-
-
-class VOTA(CallSelector):
-
-  def __init__(self):
-    super().__init__()
-
-  def get(self):
-    records = []
-    for record in super().get():
-      if record['extra'] and record['extra'].upper() == 'VOTA':
+      if (record['extra'] in self.ex_list) ^ self.reverse:
         records.append(record)
     return self.select_record(records)
