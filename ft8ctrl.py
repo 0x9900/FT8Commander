@@ -70,7 +70,6 @@ class Sequencer:
     except Exception as err:
       LOG.error(err)
 
-
   def parser(self, message):
     for name, regexp in PARSERS.items():
       match = regexp.match(message)
@@ -83,7 +82,7 @@ class Sequencer:
     tx_status = False
     frequency = 0
     pause = False
-    self.current = None
+    current = None
 
     while True:
       fds, _, _ = select.select([self.sock, sys.stdin], [], [], .5)
@@ -93,9 +92,10 @@ class Sequencer:
           line = fdin.readline().strip().upper()
           if not line:
             continue
-          elif line == 'QUIT':
+          if line == 'QUIT':
             return
-          elif line == 'PAUSE':
+
+          if line == 'PAUSE':
             LOG.warning('Paused...')
             pause = True
           elif line == 'RUN':
@@ -110,7 +110,7 @@ class Sequencer:
         if isinstance(packet, wsjtx.WSHeartbeat):
           pass
         elif isinstance(packet, wsjtx.WSLogged):
-          self.current = None
+          current = None
           self.queue.put((DBCommand.STATUS, dict(call=packet.DXCall, status=2)))
           LOG.info("Logged call: %s, Grid: %s, Mode: %s",
                    packet.DXCall, packet.DXGrid, packet.Mode)
@@ -127,7 +127,7 @@ class Sequencer:
 
           if name is None:
             continue
-          if name == 'REPLY' and match['call'] == self.current and match['to'] != self.mycall:
+          if name == 'REPLY' and match['call'] == current and match['to'] != self.mycall:
             LOG.info("Stop Transmit: %s Replying to %s ", match['call'], match['to'])
             self.stop_transmit(ip_from)
             self.queue.put((DBCommand.DELETE, match))
@@ -151,15 +151,15 @@ class Sequencer:
       ## Outside the for loop ##
       if not tx_status and sequence == 14:
         data = self.selector()
-        if pause == True:
+        if pause is True:
           continue
 
         if data:
           self.call_station(ip_from, data)
           time.sleep(1)
-          self.current = data['call']
+          current = data['call']
         else:
-          self.current = None
+          current = None
 
 
 class LoadPlugins:
@@ -189,6 +189,9 @@ class LoadPlugins:
                data['frequency'] / 10**6, name, data['call'])
       return data
     return None
+
+  def __repr__(self):
+    return '<LoadPlugins> ' + ', '.join(p.__class__.__name__ for p in self.call_select)
 
 
 def main():
