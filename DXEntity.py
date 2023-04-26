@@ -49,15 +49,17 @@ class DXCC:
     cty_file = os.path.join(os.path.expanduser(CTY_HOME), CTY_FILE)
 
     try:
-      if os.path.exists(self._db):
+      fstat = os.stat(self._db)
+      if fstat.st_mtime + CTY_EXPIRE > time.time():
         logging.info('Using DXCC cache %s', self._db)
         with dbm.open(self._db, 'r') as cdb:
           self._entities, self._max_len = marshal.loads(cdb['_meta_data_'])
         return
     except dbm.error as err:
       logging.error(err)
+    except IOError:
+      pass
 
-    logging.info('Download %s', cty_file)
     self.load_cty(cty_file)
     with open(cty_file, 'rb') as fdc:
       cty_data = plistlib.load(fdc)
@@ -108,11 +110,12 @@ class DXCC:
   def load_cty(cty_file):
     try:
       fstat = os.stat(cty_file)
-      if fstat.st_mtime + CTY_EXPIRE < time.time():
+      if fstat.st_mtime + CTY_EXPIRE > time.time():
         return
     except IOError:
       pass
 
+    logging.info('Download %s', cty_file)
     cty_tmp = cty_file + '.tmp'
     try:
       urlretrieve(CTY_URL, cty_tmp)

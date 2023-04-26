@@ -115,8 +115,8 @@ class Sequencer:
           LOG.info("Logged call: %s, Grid: %s, Mode: %s",
                    packet.DXCall, packet.DXGrid, packet.Mode)
           ### Fix this
-          log_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-          log_sock.sendto(packet.raw(), ('127.0.0.1', 2237))
+          # log_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+          # log_sock.sendto(packet.raw(), ('127.0.0.1', 2237))
 
         elif isinstance(packet, wsjtx.WSDecode):
           try:
@@ -197,7 +197,7 @@ class LoadPlugins:
 def main():
   global LOG
   logging.basicConfig(
-    format='%(asctime)s - %(levelname)s[%(lineno)d] - %(message)s',
+    format='%(asctime)s - %(levelname)s %(lineno)3d:%(module)-8s - %(message)s',
     datefmt='%H:%M:%S', level=logging.INFO
   )
   loglevel = os.getenv('LOGLEVEL', 'INFO')
