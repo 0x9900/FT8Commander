@@ -28,10 +28,9 @@ class Continent(CallSelector):
         self.log.warning('Ignoring continent: "%s" is not valid', cnt)
 
 
-  def get(self):
+  def get(self, band):
     records = []
-    for record in super().get():
-      self.log.debug(record)
+    for record in super().get(band):
       if (record['continent'] in self.c_list) ^ self.reverse:
         records.append(record)
     return self.select_record(records)
@@ -52,10 +51,9 @@ class Country(CallSelector):
       else:
         self.log.warning('Ignoring country: "%s" is not a valid entity', country)
 
-  def get(self):
+  def get(self, band):
     records = []
-    for record in super().get():
-      self.log.debug(record)
+    for record in super().get(band):
       if (record['country'] in self.c_list) ^ self.reverse:
         records.append(record)
     return self.select_record(records)

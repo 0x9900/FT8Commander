@@ -20,7 +20,7 @@ from config import Config
 from dbutils import connect_db
 
 LOTW_URL = 'https://lotw.arrl.org/lotw-user-activity.csv'
-LOTW_CACHE = '/tmp/lotw_cache.gdbm'
+LOTW_CACHE = '/tmp/lotw_cache.db'
 LOTW_EXPIRE = (7 * 86400)
 
 MIN_SNR = -50
@@ -46,7 +46,8 @@ class SingleObjectCache():
 
 class CallSelector(ABC):
 
-  REQ = "SELECT * FROM cqcalls WHERE status = 0 AND snr >= ? AND snr <= ? AND time > ?"
+  REQ = ("SELECT * FROM cqcalls WHERE "
+         "status = 0 AND snr >= ? AND snr <= ? AND band = ? AND time > ?")
 
   def __init__(self):
     config = Config()
@@ -68,19 +69,18 @@ class CallSelector(ABC):
       self.lotw = Nothing()
 
   @abstractmethod
-  def get(self):
-    return self._get()
+  def get(self, band):
+    return self._get(band)
 
   @SingleObjectCache()
-  def _get(self):
+  def _get(self, band):
     records = []
     start = datetime.utcnow() - timedelta(seconds=self.delta)
     with connect_db(self.db_name) as conn:
       curs = conn.cursor()
-      curs.execute(self.REQ, (self.min_snr, self.max_snr, start))
+      curs.execute(self.REQ, (self.min_snr, self.max_snr, band, start))
       for record in (dict(r) for r in curs):
         record['coef'] = self.coefficient(record['distance'], record['snr'])
-        self.log.debug(dict(record))
         records.append(record)
     return records
 
@@ -113,6 +113,7 @@ class LOTW:
   def __init__(self):
     self._users = set([])
     self.log = logging.getLogger(self.__class__.__name__)
+    self.log.info('LOTW database: %s', LOTW_CACHE)
 
     try:
       st = os.stat(LOTW_CACHE)

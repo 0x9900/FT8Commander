@@ -12,6 +12,7 @@ import sqlite3
 import sys
 import time
 
+from collections import UserDict
 from datetime import datetime
 from enum import Enum
 from threading import Thread
@@ -47,12 +48,33 @@ CREATE TABLE IF NOT EXISTS cqcalls
   cqzone INTEGER,
   ituzone INTEGER,
   frequency INTEGER,
+  band INTEGER,
   packet JSON
 );
-CREATE UNIQUE INDEX IF NOT EXISTS idx_call on cqcalls (call);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_call on cqcalls (call, band);
 CREATE INDEX IF NOT EXISTS idx_time on cqcalls (time DESC);
 CREATE INDEX IF NOT EXISTS idx_grid on cqcalls (grid ASC);
 """
+
+def get_band(key):
+  BANDS = {
+    1: 160,
+    3: 80,
+    7: 40,
+    10: 30,
+    14: 20,
+    18: 17,
+    21: 15,
+    24: 12,
+    28: 10,
+    50: 6,
+  }
+
+  key = int(key / 10**6)
+  if key not in BANDS:
+    return 0
+  return BANDS[key]
+
 
 class DBJSONEncoder(json.JSONEncoder):
   """Special JSON encoder capable of encoding sets"""
@@ -112,11 +134,11 @@ def get_call(db_name, call):
 class DBInsert(Thread):
 
   INSERT = """
-  INSERT INTO cqcalls VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON CONFLICT(call) DO UPDATE SET snr = ?, packet = ?
+  INSERT INTO cqcalls VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT(call, band) DO UPDATE SET snr = excluded.snr, packet = excluded.packet
   """
-  UPDATE = "UPDATE cqcalls SET status=? WHERE status <> 2 and call = ?"
-  DELETE = "DELETE from cqcalls WHERE status= 1 AND call = ?"
+  UPDATE = "UPDATE cqcalls SET status=? WHERE status <> 2 and call = ? and band = ?"
+  DELETE = "DELETE from cqcalls WHERE status= 1 AND call = ? and band = ?"
 
   def __init__(self, config, queue):
     super().__init__()
@@ -170,29 +192,26 @@ class DBInsert(Thread):
   @staticmethod
   def write(conn, call_info):
     data = type('CallInfo', (object, ), call_info)
-
     with conn:
       curs = conn.cursor()
       curs.execute(DBInsert.INSERT, (
         data.call, data.extra, data.packet['Time'], 0, data.packet['SNR'], data.grid,
         data.lat, data.lon, data.distance, data.azimuth, data.country, data.continent,
-        data.cqzone, data.ituzone, data.frequency, data.packet,
-        # Upsert data
-        data.packet['SNR'], data.packet))
+        data.cqzone, data.ituzone, data.frequency, data.band, data.packet))
 
   @staticmethod
-  def status(conn, call):
+  def status(conn, data):
     with conn:
       curs = conn.cursor()
-      curs.execute(DBInsert.UPDATE, (call['status'], call['call']))
-      LOG.debug("%s (%s, %s)", DBInsert.UPDATE, call['status'], call['call'])
+      curs.execute(DBInsert.UPDATE, (data['status'], data['call'], data['band']))
+      LOG.debug("%s (%s, %s, %d)", DBInsert.UPDATE, data['status'], data['call'], data['band'])
 
   @staticmethod
-  def delete(conn, call):
+  def delete(conn, data):
     with conn:
       curs = conn.cursor()
-      curs.execute(DBInsert.DELETE, (call['call'],))
-      LOG.debug("%s (%s)", DBInsert.DELETE, call['call'])
+      curs.execute(DBInsert.DELETE, (data['call'], data['band']))
+      LOG.debug("%s (%s:%s)", DBInsert.DELETE, data['call'], data['band'])
 
 class Purge(Thread):
   REQ = "DELETE FROM cqcalls WHERE status < 2 AND time < datetime('now','{} minute');"

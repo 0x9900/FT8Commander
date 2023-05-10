@@ -20,7 +20,7 @@ from queue import Queue
 
 import wsjtx
 
-from dbutils import create_db, DBInsert, Purge
+from dbutils import create_db, DBInsert, Purge, get_band
 from dbutils import DBCommand
 
 from config import Config
@@ -45,6 +45,9 @@ class Sequencer:
     self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     self.sock.setblocking(False) # Set socket to non-blocking mode
     self.sock.bind((bind_addr, config.wsjt_port))
+    self.logger_ip = config.logger_ip
+    self.logger_port = config.logger_port
+    self.logger_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
   def call_station(self, ip_from, data):
     pkt = data['packet']
@@ -110,13 +113,14 @@ class Sequencer:
         if isinstance(packet, wsjtx.WSHeartbeat):
           pass
         elif isinstance(packet, wsjtx.WSLogged):
+          self.logger_sock.sendto(rawdata, (self.logger_ip, self.logger_port))
           current = None
-          self.queue.put((DBCommand.STATUS, dict(call=packet.DXCall, status=2)))
+          self.queue.put(
+            (DBCommand.STATUS, dict(call=packet.DXCall, status=2, band=get_band(frequency)))
+          )
           LOG.info("Logged call: %s, Grid: %s, Mode: %s",
                    packet.DXCall, packet.DXGrid, packet.Mode)
           ### Fix this
-          # log_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-          # log_sock.sendto(packet.raw(), ('127.0.0.1', 2237))
 
         elif isinstance(packet, wsjtx.WSDecode):
           try:
@@ -130,18 +134,22 @@ class Sequencer:
           if name == 'REPLY' and match['call'] == current and match['to'] != self.mycall:
             LOG.info("Stop Transmit: %s Replying to %s ", match['call'], match['to'])
             self.stop_transmit(ip_from)
-            self.queue.put((DBCommand.DELETE, match))
+            self.queue.put((DBCommand.DELETE, dict(call=match['call'], band=get_band(frequency))))
           elif name == 'CQ':
             match['frequency'] = frequency
+            match['band'] = get_band(frequency)
             match['packet'] = packet.as_dict()
             self.queue.put((DBCommand.INSERT, match))
 
         elif isinstance(packet, wsjtx.WSStatus):
+          self.logger_sock.sendto(rawdata, (self.logger_ip, self.logger_port))
           frequency = packet.Frequency
           tx_status = any([packet.Transmitting, packet.TXEnabled])
 
           if (packet.Transmitting and packet.DXCall):
-            self.queue.put((DBCommand.STATUS, dict(call=packet.DXCall, status=1)))
+            self.queue.put(
+              (DBCommand.STATUS, dict(call=packet.DXCall, status=1, band=get_band(frequency)))
+            )
 
           if not packet.TXWatchdog and tx_status:
             continue
@@ -150,7 +158,7 @@ class Sequencer:
 
       ## Outside the for loop ##
       if not tx_status and sequence == 14:
-        data = self.selector()
+        data = self.selector(get_band(frequency))
         if pause is True:
           continue
 
@@ -177,16 +185,16 @@ class LoadPlugins:
       klass = getattr(module, class_name)
       self.call_select.append(klass())
 
-  def __call__(self):
+  def __call__(self, band):
     for selector in self.call_select:
-      data = selector.get()
+      name = selector.__class__.__name__
+      data = selector.get(band)
       if not data:
         continue
-      name = selector.__class__.__name__
-      LOG.info(('Calling: %s, From: %s, SNR: %d, Distance: %d, Frequency: %d MHz, '
+      LOG.info(('Calling: %s, From: %s, SNR: %d, Distance: %d, Band: %dm, '
                 'Selector: %s - https://www.qrz.com/db/%s'),
                data['call'], data['country'], data['snr'], data['distance'],
-               data['frequency'] / 10**6, name, data['call'])
+               data['band'], name, data['call'])
       return data
     return None
 

@@ -51,7 +51,7 @@ class DXCC:
     try:
       fstat = os.stat(self._db)
       if fstat.st_mtime + CTY_EXPIRE > time.time():
-        logging.info('Using DXCC cache %s', self._db)
+        logging.info('Using DXCC Entity cache %s', self._db)
         with dbm.open(self._db, 'r') as cdb:
           self._entities, self._max_len = marshal.loads(cdb['_meta_data_'])
         return
