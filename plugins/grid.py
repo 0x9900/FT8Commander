@@ -17,9 +17,9 @@ class Grid(CallSelector):
     self.expr = re.compile(self.config.regexp)
     self.reverse = getattr(self.config, 'reverse', False)
 
-  def get(self):
+  def get(self, band):
     records = []
-    for record in super().get():
+    for record in super().get(band):
       if bool(self.expr.search(record['grid'])) ^ self.reverse:
         records.append(record)
 
