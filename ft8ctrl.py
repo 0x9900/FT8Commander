@@ -15,6 +15,7 @@ import time
 import sys
 
 from argparse import ArgumentParser
+from functools import partial
 from importlib import import_module
 from queue import Queue
 
@@ -45,9 +46,10 @@ class Sequencer:
     self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     self.sock.setblocking(False) # Set socket to non-blocking mode
     self.sock.bind((bind_addr, config.wsjt_port))
-    self.logger_ip = config.logger_ip
-    self.logger_port = config.logger_port
-    self.logger_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    self.logger_ip = getattr(config, 'logger_ip', None)
+    self.logger_port = getattr(config, 'logger_port', None)
+    self.logger_socket = None
 
   def call_station(self, ip_from, data):
     pkt = data['packet']
@@ -72,6 +74,13 @@ class Sequencer:
       self.sock.sendto(stop_pkt.raw(), ip_from)
     except Exception as err:
       LOG.error(err)
+
+  def sendto_log(self, data):
+    if not self.logger_ip or not self.logger_port:
+      return
+    if not self.logger_socket:
+      self.logger_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    self.logger_socket.sendto(data, (self.logger_ip, self.logger_port))
 
   def parser(self, message):
     for name, regexp in PARSERS.items():
@@ -113,7 +122,7 @@ class Sequencer:
         if isinstance(packet, wsjtx.WSHeartbeat):
           pass
         elif isinstance(packet, wsjtx.WSLogged):
-          self.logger_sock.sendto(rawdata, (self.logger_ip, self.logger_port))
+          self.sendto_log(rawdata)
           current = None
           self.queue.put(
             (DBCommand.STATUS, dict(call=packet.DXCall, status=2, band=get_band(frequency)))
@@ -140,7 +149,7 @@ class Sequencer:
             self.queue.put((DBCommand.INSERT, match))
 
         elif isinstance(packet, wsjtx.WSStatus):
-          self.logger_sock.sendto(rawdata, (self.logger_ip, self.logger_port))
+          self.sendto_log(rawdata)
           frequency = packet.Frequency
           tx_status = any([packet.Transmitting, packet.TXEnabled])
 
