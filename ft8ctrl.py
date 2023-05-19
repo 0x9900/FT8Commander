@@ -118,10 +118,8 @@ class Sequencer:
           self.queue.put(
             (DBCommand.STATUS, dict(call=packet.DXCall, status=2, band=get_band(frequency)))
           )
-          LOG.info("Logged call: %s, Grid: %s, Mode: %s",
+          LOG.info("** Logged call: %s, Grid: %s, Mode: %s",
                    packet.DXCall, packet.DXGrid, packet.Mode)
-          ### Fix this
-
         elif isinstance(packet, wsjtx.WSDecode):
           try:
             name, match = self.parser(packet.Message)

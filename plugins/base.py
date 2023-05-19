@@ -22,6 +22,7 @@ from dbutils import connect_db
 LOTW_URL = 'https://lotw.arrl.org/lotw-user-activity.csv'
 LOTW_CACHE = '/tmp/lotw_cache.db'
 LOTW_EXPIRE = (7 * 86400)
+LOTW_LASTSEEN = 180             # Users who haven't used LOTW for 'n' days
 
 MIN_SNR = -50
 MAX_SNR = +50
@@ -43,6 +44,8 @@ class SingleObjectCache():
       return self._data
     return update_wrapper(wrapper, func)
 
+  def __repr__(self):
+    return "<SingleObjectCache> {self.maxage}"
 
 class CallSelector(ABC):
 
@@ -116,24 +119,26 @@ class LOTW:
     self.log.info('LOTW database: %s', LOTW_CACHE)
 
     try:
-      st = os.stat(LOTW_CACHE)
-      if time.time() > st.st_mtime + LOTW_EXPIRE:
+      _st = os.stat(LOTW_CACHE)
+      if time.time() > _st.st_mtime + LOTW_EXPIRE:
         raise FileNotFoundError
     except (FileNotFoundError, EOFError):
       self.log.info('LOTW cache expired. Reload...')
       with request.urlopen(LOTW_URL) as response:
         if response.status != 200:
-          raise SystemError('Download error')
+          raise SystemError('Download error') from None
         self.store_lotw(response)
     self.log.info('LOTW lookup database ready')
 
   def store_lotw(self, response):
+    start_date = datetime.now() - timedelta(days=LOTW_LASTSEEN)
     charset = response.info().get_content_charset('utf-8')
     try:
       with gdbm.open(LOTW_CACHE, 'c') as fdb:
         for line in (r.decode(charset) for r in response):
           fields = [f.strip() for f in line.split(',')]
-          fdb[fields[0].upper()] = fields[1]
+          if datetime.strptime(fields[1], '%Y-%m-%d') > start_date:
+            fdb[fields[0].upper()] = fields[1]
     except gdbm.error as err:
       self.log.error(err)
       raise IOError from err
@@ -148,8 +153,8 @@ class LOTW:
 
   def __repr__(self):
     try:
-      st = os.stat(LOTW_CACHE)
-      fdate = float(st.st_mtime)
+      _st = os.stat(LOTW_CACHE)
+      fdate = float(_st.st_mtime)
       expire = LOTW_EXPIRE - int(time.time() - fdate)
       if expire < 1:
         raise IOError
