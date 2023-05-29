@@ -93,7 +93,6 @@ class CallSelector(ABC):
       self.log.debug('%s is not an lotw user', record['call'])
       if record['call'] in self.lotw:
         return record
-
     return None
 
   @staticmethod
