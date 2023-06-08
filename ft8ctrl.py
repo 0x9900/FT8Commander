@@ -52,6 +52,10 @@ class Sequencer:
     self.logger_socket = None
 
   def call_station(self, ip_from, data):
+    LOG.info(('Calling: %s, From: %s, SNR: %d, Distance: %d, Band: %dm '
+             '- %s - https://www.qrz.com/db/%s'),
+             data['call'], data['country'], data['snr'], data['distance'], data['band'],
+             data['selector'], data['call'])
     pkt = data['packet']
     packet = wsjtx.WSReply()
     packet.call = data['call']
@@ -194,14 +198,13 @@ class LoadPlugins:
 
   def __call__(self, band):
     for selector in self.call_select:
-      name = selector.__class__.__name__
       data = selector.get(band)
       if not data:
         continue
-      LOG.info(('Calling: %s, From: %s, SNR: %d, Distance: %d, Band: %dm, '
-                'Selector: %s - https://www.qrz.com/db/%s'),
-               data['call'], data['country'], data['snr'], data['distance'],
-               data['band'], name, data['call'])
+      data['selector'] = selector.__class__.__name__
+      LOG.debug('Select: %s, From: %s, SNR: %d, Distance: %d, Band: %dm, Selector: %s',
+                data['call'], data['country'], data['snr'], data['distance'],
+                data['band'], data['selector'])
       return data
     return None
 
@@ -239,7 +242,7 @@ def main():
   db_purge.daemon = True
   db_purge.start()
 
-  LOG.info('Call selector: %s', ', '.join(config.call_selector))
+  LOG.info('Call selector: [%s]', ', '.join(config.call_selector))
   call_select = LoadPlugins(config.call_selector)
   main_loop = Sequencer(config, queue, call_select)
   try:
