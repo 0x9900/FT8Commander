@@ -5,8 +5,6 @@
 # All rights reserved.
 #
 
-from datetime import datetime, timedelta
-
 from dbutils import connect_db
 from .base import CallSelector
 
@@ -24,7 +22,7 @@ class DXCC100(CallSelector):
     with connect_db(self.db_name) as conn:
       curs = conn.cursor()
       result = curs.execute(self.WORKED, (band, self.worked_count,))
-      worked = set([r['country'] for r in result])
+      worked = set(r['country'] for r in result)
 
     for record in super().get(band):
       # self.log.debug("%s %s %s (%s)", record['call'], record['country'], record['snr'], band)

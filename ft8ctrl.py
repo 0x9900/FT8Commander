@@ -15,7 +15,6 @@ import time
 import sys
 
 from argparse import ArgumentParser
-from functools import partial
 from importlib import import_module
 from queue import Queue
 
@@ -76,7 +75,7 @@ class Sequencer:
     stop_pkt.tx = True
     try:
       self.sock.sendto(stop_pkt.raw(), ip_from)
-    except Exception as err:
+    except socket.error as err:
       LOG.error(err)
 
   def sendto_log(self, data):
@@ -117,6 +116,9 @@ class Sequencer:
           elif line == 'RUN':
             LOG.warning('Run...')
             pause = False
+          elif line in ("SELECTOR", "SELECTORS"):
+            selector_list = [s.__class__.__name__ for s in self.selector.call_select]
+            LOG.warning('Selectors: %s', ', '.join(selector_list))
           else:
             LOG.warning('Unknown command: %s', line)
           continue

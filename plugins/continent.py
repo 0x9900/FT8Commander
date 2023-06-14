@@ -5,10 +5,9 @@
 # All rights reserved.
 #
 
-from datetime import datetime, timedelta
-
-from .base import CallSelector
 from DXEntity import DXCC
+from .base import CallSelector
+
 
 class Continent(CallSelector):
 

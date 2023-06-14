@@ -9,13 +9,14 @@ from argparse import ArgumentParser
 
 import DXEntity
 
-def list():
+def clist():
   dxcc = DXEntity.DXCC()
   countries = dxcc.entities
-  for country in sorted(countries):
-    print(country)
+  for _country in sorted(countries):
+    print(_country)
 
 def get_prefix(prefix):
+  # pylint: disable=no-member
   dxcc = DXEntity.DXCC()
   prefix = prefix.upper()
   match, result = dxcc.get_prefix(prefix)
@@ -60,7 +61,7 @@ def main():
 
   try:
     if opts.list:
-      list()
+      clist()
     elif opts.country:
       country(opts.country)
     elif opts.check:

@@ -11,12 +11,15 @@ Spherical geometry
 
 import math
 
+def haversine(val):
+  # The haversine formula determines the great-circle distance between two points
+  return math.sin(val / 2) ** 2
+
 def distance(orig, dest):
   """Calculate the distance between 2 coordinates"""
   radius = 6371  # Earth radius in meters
   lat1, lon1 = orig
   lat2, lon2 = dest
-  haversine = lambda x: math.sin(x / 2) ** 2
 
   dphi = math.radians(lat2 - lat1)
   dlambda = math.radians(lon2 - lon1)

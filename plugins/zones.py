@@ -22,25 +22,21 @@ class ZoneSelector(CallSelector):
       except ValueError:
         self.log.warning('%s "%s" is not a integer', self.__class__.__name__, zone)
 
-  def get(self, band, field):
+  def z_get(self, band, field):
     records = []
-    for record in super().get(band):
+    for record in self.get(band):
       if (record[field] in self.z_list) ^ self.reverse:
         records.append(record)
     return self.select_record(records)
 
 
 class CQZone(ZoneSelector):
-  def __init__(self):
-    super().__init__()
 
-  def get(sel, band):
-    return super().get(band, 'cqzone')
+  def get(self, band):
+    return super().z_get(band, 'cqzone')
 
 
 class ITUZone(ZoneSelector):
-  def __init__(self):
-    super().__init__()
 
   def get(self, band):
-    return super().get(band, 'ituzone')
+    return super().z_get(band, 'ituzone')

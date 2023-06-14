@@ -16,6 +16,7 @@
 # ***** need more work                                         *****
 # ******************************************************************
 #
+# pylint: disable=consider-using-f-string,too-few-public-methods,too-many-public-methods
 
 import struct
 import ctypes

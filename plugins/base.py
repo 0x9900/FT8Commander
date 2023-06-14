@@ -22,7 +22,7 @@ from dbutils import connect_db
 LOTW_URL = 'https://lotw.arrl.org/lotw-user-activity.csv'
 LOTW_CACHE = '/tmp/lotw_cache.db'
 LOTW_EXPIRE = (7 * 86400)
-LOTW_LASTSEEN = 180             # Users who haven't used LOTW for 'n' days
+LOTW_LASTSEEN = 364             # Users who haven't used LOTW for 'n' days
 
 MIN_SNR = -50
 MAX_SNR = +50
@@ -48,6 +48,7 @@ class SingleObjectCache():
     return "<SingleObjectCache> {self.maxage}"
 
 class CallSelector(ABC):
+  # pylint: disable=too-many-instance-attributes
 
   REQ = ("SELECT * FROM cqcalls WHERE "
          "status = 0 AND snr >= ? AND snr <= ? AND band = ? AND time > ?")
@@ -105,7 +106,7 @@ class CallSelector(ABC):
 
 
 class Nothing:
-
+  # pylint: disable=too-few-public-methods
   def __contains__(self, call):
     return True
 
@@ -113,9 +114,8 @@ class Nothing:
 class LOTW:
 
   def __init__(self):
-    self._users = set([])
     self.log = logging.getLogger(self.__class__.__name__)
-    self.log.info('LOTW database: %s', LOTW_CACHE)
+    self.log.info('LOTW database: %s (%d days)', LOTW_CACHE, LOTW_LASTSEEN)
 
     try:
       _st = os.stat(LOTW_CACHE)
@@ -135,7 +135,7 @@ class LOTW:
     try:
       with gdbm.open(LOTW_CACHE, 'c') as fdb:
         for line in (r.decode(charset) for r in response):
-          fields = [f for f in line.rstrip().split(',')]
+          fields = (f for f in line.rstrip().split(','))
           if datetime.strptime(fields[1], '%Y-%m-%d') > start_date:
             fdb[fields[0].upper()] = fields[1]
     except gdbm.error as err:

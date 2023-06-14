@@ -9,9 +9,6 @@ from .base import CallSelector
 
 class Any(CallSelector):
 
-  def __init__(self):
-    super().__init__()
-
   def get(self, band):
     records = super().get(band)
     return self.select_record(records)

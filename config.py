@@ -51,15 +51,15 @@ class Config:
     sys.exit(os.EX_CONFIG)
 
   def _readconfig(self, filename):
-      try:
-        self.config_filename = filename
-        self.config_data = self._read_config(filename)
-      except ValueError as err:
-        self.log.error('Configuration error "%s"', err)
-        sys.exit(os.EX_CONFIG)
-      except yaml.scanner.ScannerError as err:
-        self.log.error('Configuration file syntax error: %s', err)
-        sys.exit(os.EX_CONFIG)
+    try:
+      self.config_filename = filename
+      self.config_data = self._read_config(filename)
+    except ValueError as err:
+      self.log.error('Configuration error "%s"', err)
+      sys.exit(os.EX_CONFIG)
+    except yaml.scanner.ScannerError as err:
+      self.log.error('Configuration file syntax error: %s', err)
+      sys.exit(os.EX_CONFIG)
 
 
   def __repr__(self):

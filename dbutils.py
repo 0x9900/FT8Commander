@@ -12,7 +12,6 @@ import sqlite3
 import sys
 import time
 
-from collections import UserDict
 from datetime import datetime
 from enum import Enum
 from threading import Thread
@@ -57,7 +56,7 @@ CREATE INDEX IF NOT EXISTS idx_grid on cqcalls (grid ASC);
 """
 
 def get_band(key):
-  BANDS = {
+  _bands = {
     1: 160,
     3: 80,
     7: 40,
@@ -71,20 +70,20 @@ def get_band(key):
   }
 
   key = int(key / 10**6)
-  if key not in BANDS:
+  if key not in _bands:
     return 0
-  return BANDS[key]
+  return _bands[key]
 
 
 class DBJSONEncoder(json.JSONEncoder):
   """Special JSON encoder capable of encoding sets"""
-  def default(self, obj):
-    if isinstance(obj, set):
-      return {'__type__': 'set', 'value': list(obj)}
-    if isinstance(obj, datetime):
-      return {'__type__': 'datetime', 'value': obj.timestamp()}
+  def default(self, o):
+    if isinstance(o, set):
+      return {'__type__': 'set', 'value': list(o)}
+    if isinstance(o, datetime):
+      return {'__type__': 'datetime', 'value': o.timestamp()}
 
-    return super(IJSONEncoder, self).default(obj)
+    return super().default(o)
 
 class DBJSONDecoder(json.JSONDecoder):
   """Special JSON decoder capable of decoding sets encodes by IJSONEncoder"""
@@ -148,6 +147,7 @@ class DBInsert(Thread):
     self.dxe_lookup = DXEntity.DXCC().lookup
 
   def run(self):
+    # pylint: disable=no-member
     LOG.info('Datebase Insert thread started')
     conn = connect_db(self.db_name)
     # Run forever and consume the queue
@@ -191,6 +191,7 @@ class DBInsert(Thread):
 
   @staticmethod
   def write(conn, call_info):
+    # pylint: disable=no-member
     data = type('CallInfo', (object, ), call_info)
     with conn:
       curs = conn.cursor()
