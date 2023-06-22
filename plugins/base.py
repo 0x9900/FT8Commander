@@ -135,7 +135,7 @@ class LOTW:
     try:
       with gdbm.open(LOTW_CACHE, 'c') as fdb:
         for line in (r.decode(charset) for r in response):
-          fields = (f for f in line.rstrip().split(','))
+          fields = [f for f in line.rstrip().split(',')]
           if datetime.strptime(fields[1], '%Y-%m-%d') > start_date:
             fdb[fields[0].upper()] = fields[1]
     except gdbm.error as err:
