@@ -155,7 +155,6 @@ class Sequencer:
             self.queue.put((DBCommand.INSERT, match))
 
         elif isinstance(packet, wsjtx.WSStatus):
-          self.sendto_log(rawdata)
           frequency = packet.Frequency
           tx_status = any([packet.Transmitting, packet.TXEnabled])
 
@@ -204,7 +203,7 @@ class LoadPlugins:
       if not data:
         continue
       data['selector'] = selector.__class__.__name__
-      LOG.debug('Select: %s, From: %s, SNR: %d, Distance: %d, Band: %dm, Selector: %s',
+      LOG.debug('Select: %s, From: %s, SNR: %d, Distance: %dKm, Band: %dm, Selector: %s',
                 data['call'], data['country'], data['snr'], data['distance'],
                 data['band'], data['selector'])
       return data

@@ -22,7 +22,7 @@ from dbutils import connect_db
 LOTW_URL = 'https://lotw.arrl.org/lotw-user-activity.csv'
 LOTW_CACHE = '/tmp/lotw_cache.db'
 LOTW_EXPIRE = (7 * 86400)
-LOTW_LASTSEEN = 364             # Users who haven't used LOTW for 'n' days
+LOTW_LASTSEEN = 270             # Users who haven't used LOTW for 'n' days
 
 MIN_SNR = -50
 MAX_SNR = +50
