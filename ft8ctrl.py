@@ -5,14 +5,14 @@
 # Copyright (c) 2023, Fred W6BSD
 # All rights reserved.
 #
-
 import logging
 import os
+import random
 import re
 import select
 import socket
-import time
 import sys
+import time
 
 from argparse import ArgumentParser
 from importlib import import_module
@@ -78,12 +78,14 @@ class Sequencer:
     except socket.error as err:
       LOG.error(err)
 
-  def sendto_log(self, data):
+  def sendto_log(self, packet):
     if not self.logger_ip or not self.logger_port:
       return
+    packet.TXPower = random.randint(11, 17)
+    packet.Comments = "[ft8ctrl] " +  packet.Comments
     if not self.logger_socket:
       self.logger_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self.logger_socket.sendto(data, (self.logger_ip, self.logger_port))
+    self.logger_socket.sendto(packet.raw(), (self.logger_ip, self.logger_port))
 
   def parser(self, message):
     for name, regexp in PARSERS.items():
@@ -128,7 +130,7 @@ class Sequencer:
         if isinstance(packet, wsjtx.WSHeartbeat):
           pass
         elif isinstance(packet, wsjtx.WSLogged):
-          self.sendto_log(rawdata)
+          self.sendto_log(packet)
           current = None
           self.queue.put(
             (DBCommand.STATUS, dict(call=packet.DXCall, status=2, band=get_band(frequency)))
