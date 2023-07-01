@@ -18,8 +18,9 @@
 #
 # pylint: disable=consider-using-f-string,too-few-public-methods,too-many-public-methods
 
-import struct
 import ctypes
+import math
+import struct
 
 from datetime import datetime
 from datetime import timedelta
@@ -80,13 +81,13 @@ class _WSPacket:
     self._index = 0            # Keeps track of where we are in the packet parsing!
 
     if pkt is None:
-      self._packet = ctypes.create_string_buffer(250)
+      self._packet = ctypes.create_string_buffer(1023)
       self._magic_number = WS_MAGIC
       self._schema_version = WS_SCHEMA
       self._packet_type = 0
       self._client_id = WS_CLIENTID
     else:
-      self._packet = ctypes.create_string_buffer(pkt)
+      self._packet = ctypes.create_string_buffer(pkt, 1023)
       self._decode()
 
   def raw(self):
@@ -127,14 +128,13 @@ class _WSPacket:
     return string.decode('utf-8')
 
   def _set_string(self, string):
-    fmt = ''
     if string is None:
-      string = b''
-      length = -1
-    else:
-      string = string.encode('utf-8')
-      length = len(string)
+      self._set_int32(-1)
+      return
 
+    fmt = ''
+    string = string.encode('utf-8')
+    length = len(string)
     fmt = '!i{:d}s'.format(length)
     struct.pack_into(fmt, self._packet, self._index, length, string)
     self._index += struct.calcsize(fmt)
@@ -147,6 +147,14 @@ class _WSPacket:
     if time_spec == 2:
       time_offset = self._get_int32()
     return (date_off, time_off, time_spec, time_offset)
+
+  def _set_datetime(self, value):
+    date_off, time_off, time_spec, time_offset = value
+    self._set_longlong(date_off)
+    self._set_uint32(time_off)
+    self._set_byte(time_spec)
+    if time_spec == 2:
+      self._set_uint32(time_offset)
 
   def _get_data(self, fmt):
     data, *_ = struct.unpack_from(fmt, self._packet, self._index)
@@ -542,11 +550,7 @@ class WSLogged(_WSPacket):
 
   def _decode(self):
     super()._decode()
-    dt_tuple = self._get_datetime()
-    self._data['DateOff'] = dt_tuple[0]
-    self._data['TimeOff'] = dt_tuple[1]
-    self._data['TimeOffSpec'] = dt_tuple[2]
-    self._data['TimeOffOffset'] = dt_tuple[3]
+    self._data['DateTimeOff'] = self._get_datetime()
     self._data['DXCall'] = self._get_string()
     self._data['DXGrid'] = self._get_string()
     self._data['DialFrequency'] = self._get_longlong()
@@ -556,11 +560,7 @@ class WSLogged(_WSPacket):
     self._data['TXPower'] = self._get_string()
     self._data['Comments'] = self._get_string()
     self._data['Name'] = self._get_string()
-    dt_tuple = self._get_datetime()
-    self._data['DateOn'] = dt_tuple[0]
-    self._data['TimeOn'] = dt_tuple[1]
-    self._data['TimeOnSpec'] = dt_tuple[2]
-    self._data['TimeOnOffset'] = dt_tuple[3]
+    self._data['DateTimeOn'] = self._get_datetime()
     self._data['OpCall'] = self._get_string()
     self._data['MyCall'] = self._get_string()
     self._data['MyGrid'] = self._get_string()
@@ -568,97 +568,164 @@ class WSLogged(_WSPacket):
     self._data['ExReceived'] = self._get_string()
     self._data['PropMode'] = self._get_string()
 
-  @property
-  def DateOff(self):
-    return self._data['DateOff']
+  def _encode(self):
+    super()._encode()
+    self._set_datetime(self._data['DateTimeOff'])
+    self._set_string(self._data['DXCall'])
+    self._set_string(self._data['DXGrid'])
+    self._set_longlong(self._data['DialFrequency'])
+    self._set_string(self._data['Mode'])
+    self._set_string(self._data['ReportSent'])
+    self._set_string(self._data['ReportReceived'])
+    self._set_string(self._data['TXPower'])
+    self._set_string(self._data['Comments'])
+    self._set_string(self._data['Name'])
+    self._set_datetime(self._data['DateTimeOn'])
+    self._set_string(self._data['OpCall'])
+    self._set_string(self._data['MyCall'])
+    self._set_string(self._data['MyGrid'])
+    self._set_string(self._data['ExSent'])
+    self._set_string(self._data['ExReceived'])
+    self._set_string(self._data['PropMode'])
 
   @property
-  def TimeOff(self):
-    return self._data['TimeOff']
+  def DateTimeOff(self):
+    return from_julian(*self._data['DateTimeOff'])
 
-  @property
-  def TimeOffSpec(self):
-    return self._data['TimeOffSpec']
-
-  @property
-  def TimeOffOffset(self):
-    return self._data['TimeOffOffset']
+  @DateTimeOff.setter
+  def DateTimeOff(self, val):
+    assert isinstance(val, datetime)
+    self._data['DateTimeOff'] = to_julian(val)
 
   @property
   def DXCall(self):
     return self._data['DXCall']
 
+  @DXCall.setter
+  def DXCall(self, val):
+    self._data['DXCall'] = val
+
   @property
   def DXGrid(self):
     return self._data['DXGrid']
+
+  @DXGrid.setter
+  def DXGrid(self, val):
+    self._data['DXGrid'] = val
 
   @property
   def DialFrequency(self):
     return self._data['DialFrequency']
 
+  @DialFrequency.setter
+  def DialFrequency(self, val):
+    self._data['DialFrequency'] = val
+
   @property
   def Mode(self):
     return self._data['Mode']
+
+  @Mode.setter
+  def Mode(self, val):
+    self._data['Mode'] = val
 
   @property
   def ReportSent(self):
     return self._data['ReportSent']
 
+  @ReportSent.setter
+  def ReportSent(self, val):
+    self._data['ReportSent'] = val
+
   @property
   def ReportReceived(self):
     return self._data['ReportReceived']
+
+  @ReportReceived.setter
+  def ReportReceived(self, val):
+    self._data['ReportReceived'] = val
 
   @property
   def TXPower(self):
     return self._data['TXPower']
 
+  @TXPower.setter
+  def TXPower(self, val):
+    if isinstance(val, (int, float)):
+      val = str(val)
+    self._data['TXPower'] = val
+
   @property
   def Comments(self):
     return self._data['Comments']
+
+  @Comments.setter
+  def Comments(self, val):
+    self._data['Comments'] = val
 
   @property
   def Name(self):
     return self._data['Name']
 
-  @property
-  def DateOn(self):
-    return self._data['DateOn']
+  @Name.setter
+  def Name(self, val):
+    self._data['Name'] = val
 
   @property
-  def TimeOn(self):
-    return self._data['TimeOn']
+  def DateTimeOn(self):
+    return from_julian(*self._data['DateTimeOn'])
 
-  @property
-  def TimeOnSpec(self):
-    return self._data['TimeOnSpec']
-
-  @property
-  def TimeOnOffset(self):
-    return self._data['TimeOnOffset']
+  @DateTimeOn.setter
+  def DateTimeOn(self, val):
+    self._data['DateTimeOn'] = val
 
   @property
   def OpCall(self):
     return self._data['OpCall']
 
+  @OpCall.setter
+  def OpCall(self, val):
+    self._data['OpCall'] = val
+
   @property
   def MyCall(self):
     return self._data['MyCall']
+
+  @MyCall.setter
+  def MyCall(self, val):
+    self._data['MyCall'] = val
 
   @property
   def MyGrid(self):
     return self._data['MyGrid']
 
+  @MyGrid.setter
+  def MyGrid(self, val):
+    self._data['MyGrid'] = val
+
   @property
   def ExSent(self):
     return self._data['ExSent']
+
+  @ExSent.setter
+  def ExSent(self, val):
+    self._data['ExSent'] = val
 
   @property
   def ExReceived(self):
     return self._data['ExReceived']
 
+  @ExReceived.setter
+  def ExReceived(self, val):
+    self._data['ExReceived'] = val
+
   @property
   def PropMode(self):
     return self._data['PropMode']
+
+  @PropMode.setter
+  def PropMode(self, val):
+    self._data['PropMode'] = val
 
 
 class WSClose(_WSPacket):
@@ -857,6 +924,23 @@ class WSConfigure(_WSPacket):
     super().__init__(pkt)
     self._packet_type = PacketType.CONFIGURE
 
+def from_julian(jday, msec, *_):
+  # this function doesn't work with dates prior to 2000
+  epoch = datetime(2000, 1, 1)
+  tdelta = timedelta(days=jday - 2451545)
+  day = epoch + tdelta
+  dtime = day + timedelta(microseconds=msec * 1000)
+  return dtime
+
+def to_julian(dtime):
+  day = datetime.combine(dtime, datetime.min.time())
+  milliseconds = (dtime - day).total_seconds() * 1000
+  a = math.floor((14 - day.month) / 12)
+  y = day.year + 4800 - a
+  m = day.month + 12*a - 3
+
+  jdate = day.day + math.floor((153*m + 2)/5) + 365 * y + math.floor(y/4) - math.floor(y/100) + math.floor(y/400) - 32045
+  return (jdate, int(milliseconds), 1, 0)
 
 def wstime2datetime(qtm):
   """wsjtx time containd the number of milliseconds since midnight"""
