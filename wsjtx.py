@@ -74,6 +74,8 @@ class SOMode(Enum):
 
 SHEAD = struct.Struct('!III')
 
+JULIAN_ORIGIN = 2451545         # Julian date for 2000/01/01
+
 class _WSPacket:
 
   def __init__(self, pkt=None):
@@ -927,20 +929,18 @@ class WSConfigure(_WSPacket):
 def from_julian(jday, msec, *_):
   # this function doesn't work with dates prior to 2000
   epoch = datetime(2000, 1, 1)
-  tdelta = timedelta(days=jday - 2451545)
+  tdelta = timedelta(days=jday - JULIAN_ORIGIN)
   day = epoch + tdelta
   dtime = day + timedelta(microseconds=msec * 1000)
   return dtime
 
 def to_julian(dtime):
-  day = datetime.combine(dtime, datetime.min.time())
-  milliseconds = (dtime - day).total_seconds() * 1000
-  a = math.floor((14 - day.month) / 12)
-  y = day.year + 4800 - a
-  m = day.month + 12*a - 3
-
-  jdate = day.day + math.floor((153*m + 2)/5) + 365 * y + math.floor(y/4) - math.floor(y/100) + math.floor(y/400) - 32045
-  return (jdate, int(milliseconds), 1, 0)
+  # this function doesn't work with dates prior to 2000
+  epoch = datetime(2000, 1, 1)
+  delta = dtime - epoch
+  jday = delta.days + JULIAN_ORIGIN
+  milliseconds = int(delta.seconds * 1000)
+  return (jday, milliseconds, 1, 0)
 
 def wstime2datetime(qtm):
   """wsjtx time containd the number of milliseconds since midnight"""
