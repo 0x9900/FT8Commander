@@ -16,6 +16,10 @@ ft8ctrl:
   # The selector 'Any' accept any callsigns.
   call_selector: Any
 
+BlackList:
+  - W6UQ
+  - W6IPA
+
 #
 # Selectors plugins configuration.
 #
