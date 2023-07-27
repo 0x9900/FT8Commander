@@ -165,8 +165,7 @@ class DBInsert(Thread):
           data['cqzone'] = dxentity.cqzone
           data['ituzone'] = dxentity.ituzone
         except KeyError:
-          LOG.error('DXEntity for %s not found, this is probably a fake callsign "%s"',
-                    data['call'], data['packet'])
+          LOG.error('DXEntity for %s not found, this is probably a fake callsign', data['call'])
           continue
 
         LOG.debug("DB Write: %-7s %s, %s, %s", data['call'] + ',', data['continent'], data['grid'],

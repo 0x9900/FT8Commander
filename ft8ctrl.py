@@ -51,10 +51,10 @@ class Sequencer:
     self.logger_socket = None
 
   def call_station(self, ip_from, data):
-    LOG.info(('Calling: %s, From: %s, SNR: %d, Distance: %d, Band: %dm '
+    LOG.info(('Calling: %s (%s), From: %s, SNR: %d, Distance: %d, Band: %dm '
              '- %s - https://www.qrz.com/db/%s'),
-             data['call'], data['country'], data['snr'], data['distance'], data['band'],
-             data['selector'], data['call'])
+             data['call'], data['extra'], data['country'], data['snr'], data['distance'],
+             data['band'], data['selector'], data['call'])
     pkt = data['packet']
     packet = wsjtx.WSReply()
     packet.call = data['call']

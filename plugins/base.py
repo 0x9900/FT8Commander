@@ -47,6 +47,36 @@ class SingleObjectCache():
   def __repr__(self):
     return "<SingleObjectCache> {self.maxage}"
 
+
+class BlackList:
+  # Singleton class
+  _instance = None
+  blacklist = []
+
+  def __new__(cls):
+    # pylint: disable=unused-argument
+    if cls._instance is not None:
+      return cls._instance
+
+    cls._instance = super(BlackList, cls).__new__(cls)
+    cls.log = logging.getLogger(cls.__name__)
+    config = Config()
+    try:
+      cls.blacklist = [c.upper() for c in config['BlackList']]
+    except KeyError:
+      pass
+    cls.log.warning("__new__ BlackList: %s", cls.blacklist)
+
+    return cls._instance
+
+  def check(self, call):
+    call = call.upper()
+    if call in self.blacklist:
+      self.log.warning('%s is blacklisted', call)
+      return True
+    return False
+
+
 class CallSelector(ABC):
   # pylint: disable=too-many-instance-attributes
 
@@ -55,13 +85,13 @@ class CallSelector(ABC):
 
   def __init__(self):
     config = Config()
+    self.blacklist = BlackList()
     self.config = config.get(self.__class__.__name__)
     self.db_name = config['ft8ctrl.db_name']
     self.min_snr = getattr(self.config, "min_snr", MIN_SNR)
     self.max_snr = getattr(self.config, "max_snr", MAX_SNR)
     self.delta = getattr(self.config, "delta", 29)
     self.debug = getattr(self.config, "debug", False)
-
     self.log = logging.getLogger(self.__class__.__name__)
     if self.debug:
       self.log.setLevel(logging.DEBUG)
@@ -91,9 +121,13 @@ class CallSelector(ABC):
   def select_record(self, records):
     records = self.sort(records)
     for record in records:
-      self.log.debug('%s is not an lotw user', record['call'])
-      if record['call'] in self.lotw:
-        return record
+      if self.blacklist.check(record['call']):
+        self.log.debug('%s is blacklisted', record['call'])
+        continue
+      if record['call'] not in self.lotw:
+        self.log.debug('%s is not an lotw user', record['call'])
+        continue
+      return record
     return None
 
   @staticmethod
@@ -135,7 +169,7 @@ class LOTW:
     try:
       with gdbm.open(LOTW_CACHE, 'c') as fdb:
         for line in (r.decode(charset) for r in response):
-          fields = [f for f in line.rstrip().split(',')]
+          fields = list(line.rstrip().split(','))
           if datetime.strptime(fields[1], '%Y-%m-%d') > start_date:
             fdb[fields[0].upper()] = fields[1]
     except gdbm.error as err:

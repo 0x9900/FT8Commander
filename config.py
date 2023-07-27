@@ -86,8 +86,12 @@ class Config:
     if not attribute:
       if not self.config_data[section]:
         return None
+      if not isinstance(self.config_data[section], dict):
+        return self.config_data[section]
+
       config = type(section, (object, ), self.config_data[section])
       return config
+
     config = self.config_data[section]
     if attribute not in config:
       raise KeyError(f'"Config" object has no attribute "{attr}"')
