@@ -32,6 +32,10 @@ WS_VERSION = '1.1'
 WS_REVISION = '1a'
 WS_CLIENTID = 'AUTOFS'
 
+class Mode(Enum):
+  FT8 = '~'
+  FT4 = '+'
+
 # Check the file
 
 class PacketType(Enum):

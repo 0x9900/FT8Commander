@@ -25,9 +25,14 @@ from dbutils import DBCommand
 
 from config import Config
 
+SEQUENCE_TIME = {
+  'FT8': 15,
+  'FT4': 6
+}
+
 PARSERS = {
   'REPLY': re.compile(r'^((?!CQ)(?P<to>\w+)(|/\w+)) (?P<call>\w+)(|/\w+) .*'),
-  'CQ': re.compile(r'^CQ ((?P<extra>.*) |)(?P<call>\w+)(|/\w+) (?P<grid>[A-Z]{2}[0-9]{2})'),
+  'CQ': re.compile(r'^CQ (?:CQ |(?P<extra>.*) |)(?P<call>\w+)(|/\w+) (?P<grid>[A-Z]{2}[0-9]{2})'),
 }
 
 LOG = logging.root
@@ -100,10 +105,11 @@ class Sequencer:
     frequency = 0
     pause = False
     current = None
+    mode_sequencing = SEQUENCE_TIME['FT8']
 
     while True:
       fds, _, _ = select.select([self.sock, sys.stdin], [], [], .5)
-      sequence = int(time.time()) % 15
+      sequence = int(time.time()) % mode_sequencing
       for fdin in fds:
         if fdin == sys.stdin:
           line = fdin.readline().strip().upper()
@@ -138,6 +144,7 @@ class Sequencer:
           LOG.info("** Logged call: %s, Grid: %s, Mode: %s",
                    packet.DXCall, packet.DXGrid, packet.Mode)
         elif isinstance(packet, wsjtx.WSDecode):
+          mode_sequencing = SEQUENCE_TIME[wsjtx.Mode(packet.Mode).name]
           try:
             name, match = self.parser(packet.Message)
           except TypeError as err:
@@ -171,7 +178,7 @@ class Sequencer:
                    packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
 
       ## Outside the for loop ##
-      if not tx_status and sequence == 14:
+      if not tx_status and sequence == mode_sequencing - 1:
         data = self.selector(get_band(frequency))
         if pause is True:
           continue
