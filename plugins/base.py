@@ -50,14 +50,13 @@ class SingleObjectCache():
 
 class BlackList:
   # Singleton class
-  _instance = None
-  blacklist = []
+  __slots__ = ['_instance', 'blacklist', 'log']
 
   def __new__(cls):
-    # pylint: disable=unused-argument
-    if cls._instance is not None:
+    if isinstance(cls._instance, cls):
       return cls._instance
 
+    cls.blacklist = []
     cls._instance = super(BlackList, cls).__new__(cls)
     cls.log = logging.getLogger(cls.__name__)
     config = Config()
@@ -65,7 +64,7 @@ class BlackList:
       cls.blacklist = [c.upper() for c in config['BlackList']]
     except KeyError:
       pass
-    cls.log.warning("__new__ BlackList: %s", cls.blacklist)
+    cls.log.info("BlackList: %s", ', '.join(cls.blacklist))
 
     return cls._instance
 
@@ -98,7 +97,7 @@ class CallSelector(ABC):
 
     if getattr(self.config, "lotw_users_only", False):
       self.lotw = LOTW()
-      self.log.info('Reply to LOTW users only')
+      self.log.info('%s reply to LOTW users only', self.__class__.__name__)
     else:
       self.lotw = Nothing()
 
@@ -146,24 +145,36 @@ class Nothing:
 
 
 class LOTW:
+  # Singleton class
+  __slots__ = ['_instance', 'log']
 
-  def __init__(self):
-    self.log = logging.getLogger(self.__class__.__name__)
-    self.log.info('LOTW database: %s (%d days)', LOTW_CACHE, LOTW_LASTSEEN)
+  def __new__(cls):
+    if isinstance(cls._instance, cls):
+      return cls._instance
+
+    cls.log = logging.getLogger(cls.__name__)
+    cls.log.info('LOTW database: %s (%d days)', LOTW_CACHE, LOTW_LASTSEEN)
 
     try:
       _st = os.stat(LOTW_CACHE)
       if time.time() > _st.st_mtime + LOTW_EXPIRE:
         raise FileNotFoundError
     except (FileNotFoundError, EOFError):
-      self.log.info('LOTW cache expired. Reload...')
+      cls.log.info('LOTW cache expired. Reload...')
       with request.urlopen(LOTW_URL) as response:
         if response.status != 200:
           raise SystemError('Download error') from None
-        self.store_lotw(response)
-    self.log.info('LOTW lookup database ready')
+        try:
+          LOTW.store_lotw(response)
+        except IOError as err:
+          cls.log.error(err)
 
-  def store_lotw(self, response):
+    cls.log.info('LOTW lookup database ready')
+    cls._instance = super(LOTW, cls).__new__(cls)
+    return cls._instance
+
+  @staticmethod
+  def store_lotw(response):
     start_date = datetime.now() - timedelta(days=LOTW_LASTSEEN)
     charset = response.info().get_content_charset('utf-8')
     try:
@@ -173,7 +184,6 @@ class LOTW:
           if datetime.strptime(fields[1], '%Y-%m-%d') > start_date:
             fdb[fields[0].upper()] = fields[1]
     except gdbm.error as err:
-      self.log.error(err)
       raise IOError from err
 
   def __contains__(self, key):
@@ -192,6 +202,6 @@ class LOTW:
       if expire < 1:
         raise IOError
     except IOError:
-      return '<class LOTW> number of LOTW cache "Expired"'
+      return f'<LOTW id:{id(self)}> LOTW cache "Expired"'
 
-    return f"<class LOTW> number of LOTW cache expire in: {expire} seconds"
+    return f"<LOTW id:{id(self)}> LOTW cache expire in: {expire} seconds"
