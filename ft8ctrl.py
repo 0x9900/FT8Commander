@@ -118,7 +118,9 @@ class Sequencer:
           if line == 'QUIT':
             return
 
-          if line == 'PAUSE':
+          if "HELP" in line or "?" in line:
+            print('The commands are: QUIT, PAUSE, RUN, SELECTOR or HELP')
+          elif line == 'PAUSE':
             LOG.warning('Paused...')
             pause = True
           elif line == 'RUN':
