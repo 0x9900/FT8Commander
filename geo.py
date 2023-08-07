@@ -34,7 +34,7 @@ def azimuth(orig, dest):
   lat1, lon1 = orig
   lat2, lon2 = dest
 
-  d_lon = (lon2 - lon1)
+  d_lon = lon2 - lon1
   x = math.cos(math.radians(lat2)) * math.sin(math.radians(d_lon))
   y = (math.cos(math.radians(lat1)) * math.sin(math.radians(lat2)) -
        math.sin(math.radians(lat1)) * math.cos(math.radians(lat2)) *
