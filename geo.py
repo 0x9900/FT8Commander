@@ -11,6 +11,8 @@ Spherical geometry
 
 import math
 
+from functools import lru_cache
+
 def haversine(val):
   # The haversine formula determines the great-circle distance between two points
   return math.sin(val / 2) ** 2
@@ -43,6 +45,7 @@ def azimuth(orig, dest):
   brng = math.degrees(brng)
   return abs(int(brng))
 
+@lru_cache(maxsize=1024)
 def grid2latlon(maiden):
   """ Transform a maidenhead grid locator to latitude & longitude """
   if not maiden:
@@ -61,7 +64,7 @@ def grid2latlon(maiden):
 
   if maiden_lg >= 4:
     lon += int(maiden[2]) * 2
-    lat += int(maiden[3]) * 1
+    lat += int(maiden[3])
   if maiden_lg >= 6:
     lon += (ord(maiden[4]) - char_a) * 5.0 / 60
     lat += (ord(maiden[5]) - char_a) * 2.5 / 60
