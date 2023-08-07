@@ -293,7 +293,7 @@ class WSStatus(_WSPacket):
 
   @property
   def Mode(self):
-    return self._data['Mode']
+    return Mode(self._data['Mode']).name
 
   @property
   def DXCall(self):
@@ -417,7 +417,7 @@ class WSDecode(_WSPacket):
 
   @property
   def Mode(self):
-    return self._data['Mode']
+    return Mode(self._data['Mode']).name
 
   @property
   def Message(self):
@@ -515,11 +515,14 @@ class WSReply(_WSPacket):
 
   @property
   def Mode(self):
-    return self._data.get('Mode')
+    return Mode(self._data.get('Mode')).name
 
   @Mode.setter
   def Mode(self, val):
-    self._data['Mode'] = val
+    if len(val) == 1:
+      self._data['Mode'] = val
+    else:
+      self._data['Mode'] = getattr(Mode, val).value
 
   @property
   def Message(self):
@@ -629,11 +632,11 @@ class WSLogged(_WSPacket):
 
   @property
   def Mode(self):
-    return self._data['Mode']
+    return Mode[self._data['Mode']].value
 
   @Mode.setter
   def Mode(self, val):
-    self._data['Mode'] = val
+    self._data['Mode'] = getattr(Mode, val).value
 
   @property
   def ReportSent(self):

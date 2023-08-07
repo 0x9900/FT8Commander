@@ -18,6 +18,7 @@ from argparse import ArgumentParser
 from importlib import import_module
 from queue import Queue
 
+import geo
 import wsjtx
 
 from dbutils import create_db, DBInsert, Purge, get_band
@@ -105,11 +106,11 @@ class Sequencer:
     frequency = 0
     pause = False
     current = None
-    mode_sequencing = SEQUENCE_TIME['FT8']
+    mode = 'FT8'
 
     while True:
       fds, _, _ = select.select([self.sock, sys.stdin], [], [], .5)
-      sequence = int(time.time()) % mode_sequencing
+      sequence = int(time.time()) % SEQUENCE_TIME[mode]
       for fdin in fds:
         if fdin == sys.stdin:
           line = fdin.readline().strip().upper()
@@ -129,6 +130,8 @@ class Sequencer:
           elif line in ("SELECTOR", "SELECTORS"):
             selector_list = [s.__class__.__name__ for s in self.selector.call_select]
             LOG.warning('Selectors: %s', ', '.join(selector_list))
+          elif line == 'CACHE':
+            LOG.info(geo.grid2latlon.cache_info())
           else:
             LOG.warning('Unknown command: %s', line)
           continue
@@ -141,12 +144,12 @@ class Sequencer:
           self.sendto_log(packet)
           current = None
           self.queue.put(
-            (DBCommand.STATUS, dict(call=packet.DXCall, status=2, band=get_band(frequency)))
+            (DBCommand.STATUS, {"call": packet.DXCall, "status": 2, "band": get_band(frequency)})
           )
           LOG.info("** Logged call: %s, Grid: %s, Mode: %s",
                    packet.DXCall, packet.DXGrid, packet.Mode)
         elif isinstance(packet, wsjtx.WSDecode):
-          mode_sequencing = SEQUENCE_TIME[wsjtx.Mode(packet.Mode).name]
+          mode = packet.Mode
           try:
             name, match = self.parser(packet.Message)
           except TypeError as err:
@@ -158,7 +161,7 @@ class Sequencer:
           if name == 'REPLY' and match['call'] == current and match['to'] != self.mycall:
             LOG.info("Stop Transmit: %s Replying to %s ", match['call'], match['to'])
             self.stop_transmit(ip_from)
-            self.queue.put((DBCommand.DELETE, dict(call=match['call'], band=get_band(frequency))))
+            self.queue.put((DBCommand.DELETE, {"call": match['call'], "band": get_band(frequency)}))
           elif name == 'CQ':
             match['frequency'] = frequency
             match['band'] = get_band(frequency)
@@ -171,7 +174,7 @@ class Sequencer:
 
           if (packet.Transmitting and packet.DXCall):
             self.queue.put(
-              (DBCommand.STATUS, dict(call=packet.DXCall, status=1, band=get_band(frequency)))
+              (DBCommand.STATUS, {"call": packet.DXCall, "status": 1, "band": get_band(frequency)})
             )
 
           if not packet.TXWatchdog and tx_status:
@@ -180,7 +183,7 @@ class Sequencer:
                    packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
 
       ## Outside the for loop ##
-      if not tx_status and sequence == mode_sequencing - 1:
+      if not tx_status and sequence == SEQUENCE_TIME[mode] - 1:
         data = self.selector(get_band(frequency))
         if pause is True:
           continue
