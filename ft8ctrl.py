@@ -147,7 +147,7 @@ class Sequencer:
             (DBCommand.STATUS, {"call": packet.DXCall, "status": 2, "band": get_band(frequency)})
           )
           LOG.info("** Logged call: %s, Grid: %s, Mode: %s",
-                   packet.DXCall, packet.DXGrid, packet.Mode)
+                   packet.DXCall, packet.DXGrid, wsjtx.Mode(packet.Mode).name)
         elif isinstance(packet, wsjtx.WSDecode):
           mode = packet.Mode
           try:
