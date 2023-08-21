@@ -13,7 +13,7 @@ import time
 
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from functools import update_wrapper
+from functools import update_wrapper, lru_cache
 from urllib import request
 
 from config import Config
@@ -186,10 +186,11 @@ class LOTW:
     except gdbm.error as err:
       raise IOError from err
 
+  @lru_cache(512)
   def __contains__(self, key):
     try:
       with gdbm.open(LOTW_CACHE, 'r') as fdb:
-        return key in fdb
+        return key.upper() in fdb
     except gdbm.error as err:
       logging.error(err)
       raise SystemError(err) from None
