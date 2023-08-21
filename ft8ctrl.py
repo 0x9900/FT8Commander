@@ -21,8 +21,9 @@ from queue import Queue
 import geo
 import wsjtx
 
-from dbutils import create_db, DBInsert, Purge, get_band
 from dbutils import DBCommand
+from dbutils import create_db, DBInsert, Purge, get_band
+from plugins.base import LOTW
 
 from config import Config
 
@@ -131,7 +132,8 @@ class Sequencer:
             selector_list = [s.__class__.__name__ for s in self.selector.call_select]
             LOG.warning('Selectors: %s', ', '.join(selector_list))
           elif line == 'CACHE':
-            LOG.info(geo.grid2latlon.cache_info())
+            LOG.info("Cache LOTW: %s", LOTW.__contains__.cache_info())
+            LOG.info("Cache grid2latlon: %s", geo.grid2latlon.cache_info())
           else:
             LOG.warning('Unknown command: %s', line)
           continue
