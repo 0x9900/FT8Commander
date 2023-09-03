@@ -64,7 +64,12 @@ class BlackList:
       cls.blacklist = [c.upper() for c in config['BlackList']]
     except KeyError:
       pass
-    cls.log.info("BlackList: %s", ', '.join(cls.blacklist))
+
+    tsize = os.get_terminal_size()
+    width = (tsize.columns - 45)
+    _bl = ', '.join(c for c in cls.blacklist)[:width]
+    _bl = _bl[:_bl.rindex(',')]
+    cls.log.info("BlackList: %s...", _bl)
 
     return cls._instance
 
@@ -170,6 +175,8 @@ class LOTW:
           cls.log.error(err)
 
     cls.log.info('LOTW lookup database ready')
+    cls.__contains__ = lru_cache(maxsize=512)(cls.__contains__)
+
     cls._instance = super(LOTW, cls).__new__(cls)
     return cls._instance
 
@@ -186,7 +193,6 @@ class LOTW:
     except gdbm.error as err:
       raise IOError from err
 
-  @lru_cache(512)
   def __contains__(self, key):
     try:
       with gdbm.open(LOTW_CACHE, 'r') as fdb:
