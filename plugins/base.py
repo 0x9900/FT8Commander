@@ -76,7 +76,6 @@ class BlackList:
   def check(self, call):
     call = call.upper()
     if call in self.blacklist:
-      self.log.warning('%s is blacklisted', call)
       return True
     return False
 
