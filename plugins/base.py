@@ -21,7 +21,7 @@ from dbutils import connect_db
 
 LOTW_URL = 'https://lotw.arrl.org/lotw-user-activity.csv'
 LOTW_CACHE = '/tmp/lotw_cache.db'
-LOTW_EXPIRE = (7 * 86400)
+LOTW_EXPIRE = 7 * 86400
 LOTW_LASTSEEN = 270             # Users who haven't used LOTW for 'n' days
 
 MIN_SNR = -50
@@ -50,7 +50,6 @@ class SingleObjectCache():
 
 class BlackList:
   # Singleton class
-  __slots__ = ['_instance', 'blacklist', 'log']
 
   def __new__(cls):
     if isinstance(cls._instance, cls):
@@ -61,12 +60,12 @@ class BlackList:
     cls.log = logging.getLogger(cls.__name__)
     config = Config()
     try:
-      cls.blacklist = [c.upper() for c in config['BlackList']]
+      cls.blacklist = [c.upper() for c in config.get('BlackList', [])]
     except KeyError:
       pass
 
     tsize = os.get_terminal_size()
-    width = (tsize.columns - 45)
+    width = tsize.columns - 45
     _bl = ', '.join(c for c in cls.blacklist)[:width]
     _bl = _bl[:_bl.rindex(',')]
     cls.log.info("BlackList: %s...", _bl)
@@ -153,7 +152,6 @@ class Nothing:
 
 class LOTW:
   # Singleton class
-  __slots__ = ['_instance', 'log']
 
   def __new__(cls):
     if isinstance(cls._instance, cls):
