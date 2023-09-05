@@ -79,6 +79,9 @@ class BlackList:
       return True
     return False
 
+  def __contains__(self, call):
+    return self.check(call)
+
 
 class CallSelector(ABC):
   # pylint: disable=too-many-instance-attributes
@@ -124,7 +127,7 @@ class CallSelector(ABC):
   def select_record(self, records):
     records = self.sort(records)
     for record in records:
-      if self.blacklist.check(record['call']):
+      if record['call'] in self.blacklist:
         self.log.debug('%s is blacklisted', record['call'])
         continue
       if record['call'] not in self.lotw:
