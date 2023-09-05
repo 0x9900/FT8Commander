@@ -52,7 +52,7 @@ class BlackList:
   # Singleton class
 
   def __new__(cls):
-    if isinstance(cls._instance, cls):
+    if hasattr(cls, '_instance') and isinstance(cls._instance, cls):
       return cls._instance
 
     cls.blacklist = []
@@ -154,7 +154,7 @@ class LOTW:
   # Singleton class
 
   def __new__(cls):
-    if isinstance(cls._instance, cls):
+    if hasattr(cls, '_instance') and isinstance(cls._instance, cls):
       return cls._instance
 
     cls.log = logging.getLogger(cls.__name__)
