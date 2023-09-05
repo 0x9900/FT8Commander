@@ -30,7 +30,7 @@ MAX_SNR = +50
 class SingleObjectCache():
   __slots__ = ['_data', '_age', 'maxage']
 
-  def __init__(self, maxage=7):
+  def __init__(self, maxage=4):
     self.maxage = maxage
     self._data = None
     self._age = 0
