@@ -4,6 +4,7 @@
 # Copyright (c) 2023, Fred W6BSD
 # All rights reserved.
 #
+# pylint: disable=invalid-name
 
 import dbm.gnu as dbm
 import logging
@@ -13,6 +14,7 @@ import plistlib
 import time
 
 from collections import defaultdict
+from functools import lru_cache
 from urllib.error import HTTPError
 from urllib.request import urlretrieve
 
@@ -22,9 +24,10 @@ CTY_FILE = "cty.plist"
 CTY_DB = "cty.db"
 CTY_EXPIRE = 86400 * 7          # One week
 
+LRU_CACHE_SIZE = 8192
+
 class DXCCRecord:
   # pylint: disable=too-few-public-methods
-
   __slots__ = ['prefix', 'country', 'continent', 'cqzone', 'ituzone', 'latitude', 'longitude',
                'gmtoffset']
 
@@ -45,21 +48,23 @@ class DXCC:
   def __init__(self):
     self._entities = defaultdict(set)
     self._max_len = 0
+    self.get_prefix = lru_cache(maxsize=LRU_CACHE_SIZE)(self.get_prefix)
     self._db = os.path.join(os.path.expanduser(CTY_HOME), CTY_DB)
     cty_file = os.path.join(os.path.expanduser(CTY_HOME), CTY_FILE)
 
     try:
       fstat = os.stat(self._db)
       if fstat.st_mtime + CTY_EXPIRE > time.time():
-        logging.info('Using DXCC Entity cache %s', self._db)
+        logging.info('Using DXCC cache %s', self._db)
         with dbm.open(self._db, 'r') as cdb:
           self._entities, self._max_len = marshal.loads(cdb['_meta_data_'])
         return
+    except FileNotFoundError:
+      logging.error('DXEntity cache not found')
     except dbm.error as err:
       logging.error(err)
-    except IOError:
-      pass
 
+    logging.info('Download %s', cty_file)
     self.load_cty(cty_file)
     with open(cty_file, 'rb') as fdc:
       cty_data = plistlib.load(fdc)
@@ -108,14 +113,6 @@ class DXCC:
 
   @staticmethod
   def load_cty(cty_file):
-    try:
-      fstat = os.stat(cty_file)
-      if fstat.st_mtime + CTY_EXPIRE > time.time():
-        return
-    except IOError:
-      pass
-
-    logging.info('Download %s', cty_file)
     cty_tmp = cty_file + '.tmp'
     try:
       urlretrieve(CTY_URL, cty_tmp)
