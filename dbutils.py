@@ -26,9 +26,6 @@ class DBCommand(Enum):
   STATUS = 2
   DELETE = 3
 
-LOG = logging.getLogger('dbutil')
-LOG.setLevel(os.getenv('LOGLEVEL', 'INFO'))
-
 SQL_TABLE = """
 CREATE TABLE IF NOT EXISTS cqcalls
 (
@@ -148,7 +145,7 @@ class DBInsert(Thread):
 
   def run(self):
     # pylint: disable=no-member
-    LOG.info('Datebase Insert thread started')
+    logging.info('Datebase Insert thread started')
     conn = connect_db(self.db_name)
     # Run forever and consume the queue
     while True:
@@ -165,28 +162,28 @@ class DBInsert(Thread):
           data['cqzone'] = dxentity.cqzone
           data['ituzone'] = dxentity.ituzone
         except KeyError:
-          LOG.error('DXEntity for %s not found, this is probably a fake callsign', data['call'])
+          logging.error('DXEntity for %s not found, this is probably a fake callsign', data['call'])
           continue
 
-        LOG.debug("DB Write: %-7s %s, %s, %s", data['call'] + ',', data['continent'], data['grid'],
+        logging.debug("DB Write: %-7s %s, %s, %s", data['call'] + ',', data['continent'], data['grid'],
                   data['country'])
         try:
           DBInsert.write(conn, data)
         except sqlite3.OperationalError as err:
-          LOG.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
+          logging.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
         except AttributeError as err:
-          LOG.error(err)
-          LOG.error(data)
+          logging.error(err)
+          logging.error(data)
       elif cmd == DBCommand.STATUS:
         try:
           DBInsert.status(conn, data)
         except sqlite3.OperationalError as err:
-          LOG.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
+          logging.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
       elif cmd == DBCommand.DELETE:
         try:
           DBInsert.delete(conn, data)
         except sqlite3.OperationalError as err:
-          LOG.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
+          logging.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
 
   @staticmethod
   def write(conn, call_info):
@@ -204,14 +201,14 @@ class DBInsert(Thread):
     with conn:
       curs = conn.cursor()
       curs.execute(DBInsert.UPDATE, (data['status'], data['call'], data['band']))
-      LOG.debug("%s (%s, %s, %d)", DBInsert.UPDATE, data['status'], data['call'], data['band'])
+      logging.debug("%s (%s, %s, %d)", DBInsert.UPDATE, data['status'], data['call'], data['band'])
 
   @staticmethod
   def delete(conn, data):
     with conn:
       curs = conn.cursor()
       curs.execute(DBInsert.DELETE, (data['call'], data['band']))
-      LOG.debug("%s (%s:%s)", DBInsert.DELETE, data['call'], data['band'])
+      logging.debug("%s (%s:%s)", DBInsert.DELETE, data['call'], data['band'])
 
 class Purge(Thread):
   REQ = "DELETE FROM cqcalls WHERE status < 2 AND time < datetime('now','{} minute');"
@@ -221,11 +218,11 @@ class Purge(Thread):
     self.db_name = db_name
     self.purge_time = abs(purge_time) * -1 # make sure we have a negative number
     self.req = self.REQ.format(self.purge_time)
-    LOG.debug(self.req)
+    logging.debug(self.req)
 
   def run(self):
     count = 0
-    LOG.info('Purge thread started (retry_time %d minutes)', abs(self.purge_time))
+    logging.info('Purge thread started (retry_time %d minutes)', abs(self.purge_time))
     conn = connect_db(self.db_name)
     while True:
       with conn:
@@ -234,6 +231,6 @@ class Purge(Thread):
           curs.execute(self.req)
           count = curs.rowcount
         except sqlite3.OperationalError as err:
-          LOG.error(err)
-      LOG.debug('Purge %d Records', count)
+          logging.error(err)
+      logging.debug('Purge %d Records', count)
       time.sleep(60)
