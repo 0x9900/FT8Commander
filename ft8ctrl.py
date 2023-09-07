@@ -235,7 +235,7 @@ def main():
     format='%(asctime)s - %(levelname)s %(lineno)3d:%(module)-8s - %(message)s',
     datefmt='%H:%M:%S', level=logging.INFO
   )
-  loglevel = os.getenv('LOGLEVEL', 'INFO')
+  loglevel = os.getenv('LOG_LEVEL', 'INFO')
   if loglevel not in logging._nameToLevel: # pylint: disable=protected-access
     logging.error('Log level "%s" does not exist, defaulting to INFO', loglevel)
     loglevel = logging.INFO
