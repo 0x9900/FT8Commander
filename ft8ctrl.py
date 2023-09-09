@@ -259,7 +259,7 @@ def main():
   db_purge.daemon = True
   db_purge.start()
 
-  LOG.info('Call selector: [%s]', ', '.join(config.call_selector))
+  LOG.info('Call selector: %s', ', '.join(config.call_selector))
   call_select = LoadPlugins(config.call_selector)
   main_loop = Sequencer(config, queue, call_select)
   try:
