@@ -34,7 +34,8 @@ SEQUENCE_TIME = {
 
 PARSERS = {
   'REPLY': re.compile(r'^((?!CQ)(?P<to>\w+)(|/\w+)) (?P<call>\w+)(|/\w+) .*'),
-  'CQ': re.compile(r'^CQ (?:CQ |(?P<extra>.*) |)(?P<call>\w+)(|/\w+) (?P<grid>[A-Z]{2}[0-9]{2})'),
+  'CQ': re.compile(r'^CQ\s(?:CQ\s|(?P<extra>[\S.]+)\s|)(?P<call>\w+(|/\w+))\s(?P<grid>[A-Z]{2}[0-9]{2})'),
+  'BROKENCQ': re.compile(r'^CQ\s(?P<call>\w+(|/\w+))$'),
 }
 
 LOG = logging.root
@@ -97,8 +98,15 @@ class Sequencer:
   def parser(self, message):
     for name, regexp in PARSERS.items():
       match = regexp.match(message)
-      if match:
-        return (name, match.groupdict())
+      if not match:
+        continue
+      data = match.groupdict()
+      if name == 'BROKENCQ':
+        name = 'CQ'
+        data['extra'] = data['grid'] = None
+      LOG.debug("%s = %r, %s", name, data, message)
+      return (name, data)
+    LOG.debug('Unmatched: %s', message)
     return (None, None)
 
   def run(self):
