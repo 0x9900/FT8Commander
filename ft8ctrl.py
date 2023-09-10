@@ -104,7 +104,8 @@ class Sequencer:
       if name == 'BROKENCQ':
         name = 'CQ'
         data['extra'] = data['grid'] = None
-      LOG.debug("%s = %r, %s", name, data, message)
+      if name == 'CQ':
+        LOG.debug("%s = %r, %s", name, data, message)
       return (name, data)
     LOG.debug('Unmatched: %s', message)
     return (None, None)
@@ -118,7 +119,7 @@ class Sequencer:
     mode = 'FT8'
 
     while True:
-      fds, _, _ = select.select([self.sock, sys.stdin], [], [], .5)
+      fds, _, _ = select.select([self.sock, sys.stdin], [], [], 1.0)
       sequence = int(time.time()) % SEQUENCE_TIME[mode]
       for fdin in fds:
         if fdin == sys.stdin:
@@ -193,17 +194,15 @@ class Sequencer:
                    packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
 
       ## Outside the for loop ##
-      if not tx_status and sequence == SEQUENCE_TIME[mode] - 1:
-        data = self.selector(get_band(frequency))
-        if pause is True:
-          continue
-
-        if data:
-          self.call_station(ip_from, data)
-          time.sleep(1)
-          current = data['call']
-        else:
-          current = None
+      if not pause:
+        if not tx_status and sequence == SEQUENCE_TIME[mode] - 1:
+          data = self.selector(get_band(frequency))
+          if data:
+            self.call_station(ip_from, data)
+            # time.sleep(1)
+            current = data['call']
+          else:
+            current = None
 
 
 class LoadPlugins:
