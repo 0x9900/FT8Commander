@@ -15,6 +15,7 @@ import sys
 import time
 
 from argparse import ArgumentParser
+from datetime import datetime
 from importlib import import_module
 from queue import Queue
 
@@ -28,13 +29,14 @@ from plugins.base import LOTW
 from config import Config
 
 SEQUENCE_TIME = {
-  'FT8': 15,
-  'FT4': 6
+  'FT8':  (2, 17, 32, 47),
+  'FT4': (1, 7, 13, 19, 25, 31, 37, 43, 49, 55),
 }
 
 PARSERS = {
   'REPLY': re.compile(r'^((?!CQ)(?P<to>\w+)(|/\w+)) (?P<call>\w+)(|/\w+) .*'),
-  'CQ': re.compile(r'^CQ (?:CQ |(?P<extra>.*) |)(?P<call>\w+)(|/\w+) (?P<grid>[A-Z]{2}[0-9]{2})'),
+  'CQ': re.compile(r'^CQ\s(?:CQ\s|(?P<extra>[\S.]+)\s|)(?P<call>\w+(|/\w+))\s(?P<grid>[A-Z]{2}[0-9]{2})'),
+  'BROKENCQ': re.compile(r'^CQ\s(?P<call>\w+(|/\w+))$'),
 }
 
 LOG = logging.root
@@ -97,9 +99,34 @@ class Sequencer:
   def parser(self, message):
     for name, regexp in PARSERS.items():
       match = regexp.match(message)
-      if match:
-        return (name, match.groupdict())
+      if not match:
+        continue
+      data = match.groupdict()
+      if name == 'BROKENCQ':
+        name = 'CQ'
+        data['extra'] = data['grid'] = None
+      if name == 'CQ':
+        LOG.debug("%s = %r, %s", name, data, message)
+      return (name, data)
+    LOG.debug('Unmatched: %s', message)
     return (None, None)
+
+  def logcall(self, packet):
+    self.sendto_log(packet)
+    frequency = packet.DialFrequency
+    self.queue.put(
+      (DBCommand.STATUS, {"call": packet.DXCall, "status": 2, "band": get_band(frequency)})
+    )
+    LOG.info("** Logged call: %s, Grid: %s, Mode: %s",
+             packet.DXCall, packet.DXGrid, wsjtx.Mode(packet.Mode).name)
+
+  def decode(self, packet):
+    try:
+      return self.parser(packet.Message)
+    except TypeError as err:
+      LOG.error('Error: %s - Message: %s', err, packet.Message)
+    return (None, None)
+
 
   def run(self):
     ip_from = None
@@ -107,11 +134,10 @@ class Sequencer:
     frequency = 0
     pause = False
     current = None
-    mode = 'FT8'
+    sequence = []
 
     while True:
-      fds, _, _ = select.select([self.sock, sys.stdin], [], [], .5)
-      sequence = int(time.time()) % SEQUENCE_TIME[mode]
+      fds, _, _ = select.select([self.sock, sys.stdin], [], [], .75)
       for fdin in fds:
         if fdin == sys.stdin:
           line = fdin.readline().strip().upper()
@@ -121,7 +147,7 @@ class Sequencer:
             return
 
           if "HELP" in line or "?" in line:
-            print('The commands are: QUIT, PAUSE, RUN, SELECTOR or HELP')
+            LOG.info('The commands are: QUIT, CACHE, PAUSE, RUN, SELECTOR or HELP')
           elif line == 'PAUSE':
             LOG.warning('Paused...')
             pause = True
@@ -143,23 +169,10 @@ class Sequencer:
         if isinstance(packet, wsjtx.WSHeartbeat):
           pass
         elif isinstance(packet, wsjtx.WSLogged):
-          self.sendto_log(packet)
+          self.logcall(packet)
           current = None
-          self.queue.put(
-            (DBCommand.STATUS, {"call": packet.DXCall, "status": 2, "band": get_band(frequency)})
-          )
-          LOG.info("** Logged call: %s, Grid: %s, Mode: %s",
-                   packet.DXCall, packet.DXGrid, wsjtx.Mode(packet.Mode).name)
         elif isinstance(packet, wsjtx.WSDecode):
-          mode = packet.Mode
-          try:
-            name, match = self.parser(packet.Message)
-          except TypeError as err:
-            LOG.error('Error: %s - Message: %s', err, packet.Message)
-            continue
-
-          if name is None:
-            continue
+          name, match = self.decode(packet)
           if name == 'REPLY' and match['call'] == current and match['to'] != self.mycall:
             LOG.info("Stop Transmit: %s Replying to %s ", match['call'], match['to'])
             self.stop_transmit(ip_from)
@@ -169,33 +182,28 @@ class Sequencer:
             match['band'] = get_band(frequency)
             match['packet'] = packet.as_dict()
             self.queue.put((DBCommand.INSERT, match))
-
         elif isinstance(packet, wsjtx.WSStatus):
+          sequence = SEQUENCE_TIME[packet.TXMode]
           frequency = packet.Frequency
           tx_status = any([packet.Transmitting, packet.TXEnabled])
-
           if (packet.Transmitting and packet.DXCall):
             self.queue.put(
               (DBCommand.STATUS, {"call": packet.DXCall, "status": 1, "band": get_band(frequency)})
             )
-
-          if not packet.TXWatchdog and tx_status:
-            continue
           LOG.debug("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
                    packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
 
       ## Outside the for loop ##
-      if not tx_status and sequence == SEQUENCE_TIME[mode] - 1:
-        data = self.selector(get_band(frequency))
-        if pause is True:
-          continue
-
-        if data:
-          self.call_station(ip_from, data)
-          time.sleep(1)
-          current = data['call']
-        else:
-          current = None
+      if not pause and not tx_status:
+        _now = datetime.utcnow()
+        if _now.second in sequence:
+          data = self.selector(get_band(frequency))
+          if data:
+            self.call_station(ip_from, data)
+            current = data['call']
+          else:
+            current = None
+          time.sleep(.75)
 
 
 class LoadPlugins:
@@ -259,7 +267,7 @@ def main():
   db_purge.daemon = True
   db_purge.start()
 
-  LOG.info('Call selector: [%s]', ', '.join(config.call_selector))
+  LOG.info('Call selector: %s', ', '.join(config.call_selector))
   call_select = LoadPlugins(config.call_selector)
   main_loop = Sequencer(config, queue, call_select)
   try:
