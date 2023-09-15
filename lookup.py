@@ -24,7 +24,7 @@ KEYS = ['call', 'status', 'band', 'snr', 'grid', 'cqzone', 'ituzone', 'country',
         'time', 'frequency', 'extra']
 REQ = f'SELECT {",".join(KEYS)} FROM cqcalls WHERE call REGEXP ?'
 
-REQ_DEL = 'DELETE FROM cqcalls WHERE call = ?'
+REQ_DEL = 'DELETE FROM cqcalls WHERE call = ? AND band = ?'
 
 def dict_factory(cursor, row):
   data = {}
@@ -50,15 +50,16 @@ def find(dbname, call):
   except sqlite3.OperationalError as err:
     raise SystemError(err)
 
-def delete_record(dbname, call):
+def delete_record(dbname, call, band):
+  call = call.upper()
   conn = connect_db(dbname)
   with conn:
     curs = conn.cursor()
-    curs.execute(REQ_DEL, (call,))
+    curs.execute(REQ_DEL, (call, band))
     if curs.rowcount > 0:
-      print(f'{call} Deleted')
+      print(f'Call: {call}, Band: {band} - Deleted')
     else:
-      print(f'{call} Not found')
+      print(f'Call: {call}, Band: {band} - Not found')
 
 def run(dbname):
   lotw = LOTW()
@@ -90,8 +91,8 @@ def main():
   parser = ArgumentParser(description="ft8ctl call sign status")
   parser.add_argument("-C", "--config", help="Name of the configuration file")
   exgroup = parser.add_mutually_exclusive_group()
-  exgroup.add_argument("-d", "--delete",
-                       help="Reset the status")
+  exgroup.add_argument("-d", "--delete", nargs=2,
+                       help="Delete entry args are call band")
   exgroup.add_argument("-r", "--run", action="store_true", default=False,
                        help="Show the last 15 seconds entries ")
   exgroup.add_argument('-c', '--call', help="Call sign")
@@ -106,7 +107,7 @@ def main():
   elif opts.delete:
     records = find(config.db_name, f"^{opts.delete}$")
     print(tabulate.tabulate(records, headers='keys'))
-    delete_record(config.db_name, opts.delete)
+    delete_record(config.db_name, *opts.delete)
   elif opts.call:
     call = opts.call.upper()
     try:
