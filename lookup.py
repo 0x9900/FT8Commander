@@ -32,6 +32,12 @@ def dict_factory(cursor, row):
     data[col[0]] = row[idx]
   return data
 
+def dict_factory(cursor, row):
+  data = {}
+  for idx, col in enumerate(cursor.description):
+    data[col[0]] = row[idx]
+  return data
+
 def regexp(expr, data):
   return 1 if re.search(expr, data) else 0
 
@@ -60,6 +66,32 @@ def delete_record(dbname, call, band):
       print(f'Call: {call}, Band: {band} - Deleted')
     else:
       print(f'Call: {call}, Band: {band} - Not found')
+
+def run(dbname):
+  lotw = LOTW()
+  delta = 30
+  req = f'SELECT {",".join(KEYS)} FROM cqcalls WHERE time > ?'
+  conn = connect_db(dbname)
+  conn.row_factory = dict_factory
+
+  def fetch():
+    start = datetime.utcnow() - timedelta(seconds=delta)
+    with conn:
+      curs = conn.cursor()
+      curs.execute(req, (start, ))
+      records = []
+      for record in curs:
+        record['lotw'] = record['call'] in lotw
+        records.append(record)
+      return records
+
+  while True:
+    time.sleep(int(time.time()) % 5)
+    records = fetch()
+    if records:
+      print(tabulate.tabulate(fetch(), headers='keys'))
+      print()
+
 
 def run(dbname):
   lotw = LOTW()
