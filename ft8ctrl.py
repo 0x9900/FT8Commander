@@ -137,7 +137,7 @@ class Sequencer:
     sequence = []
 
     while True:
-      fds, _, _ = select.select([self.sock, sys.stdin], [], [], .75)
+      fds, _, _ = select.select([self.sock, sys.stdin], [], [], .7)
       for fdin in fds:
         if fdin == sys.stdin:
           line = fdin.readline().strip().upper()
@@ -182,6 +182,7 @@ class Sequencer:
             match['band'] = get_band(frequency)
             match['packet'] = packet.as_dict()
             self.queue.put((DBCommand.INSERT, match))
+          continue
         elif isinstance(packet, wsjtx.WSStatus):
           sequence = SEQUENCE_TIME[packet.TXMode]
           frequency = packet.Frequency
@@ -203,7 +204,7 @@ class Sequencer:
             current = data['call']
           else:
             current = None
-          time.sleep(.75)
+          time.sleep(1)
 
 
 class LoadPlugins:
