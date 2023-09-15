@@ -33,25 +33,32 @@ The following AppleScript example will automatically click on the Logging window
 ** Note: Another application might steal the focus from the logging window, and the OK button might not be pressed on time. **
 
 ```
-set bundleId to "org.k1jt.wsjtx"
-
-tell application id bundleId to activate
+tell application "wsjtx" to activate
+say "w s j t x is active"
 
 tell application "System Events"
 	repeat
-		tell application process "WSJT-X"
-			set winList to every window
-		end tell
-		repeat with win in winList
-			set theTitle to name of win
-			if theTitle contains "Log QSO" then
-				tell application process "WSJT-X"
-					click button "Ok" of group 1 of win
+		try
+			tell application process "WSJT-X"
+				set winList to every window
+			end tell
+			repeat with win in winList
+				tell application "System Events"
+					get entire contents of win
 				end tell
-				say "Contact Logged"
-			end if
-		end repeat
-		delay 2
+				set theTitle to name of win
+				if theTitle contains "Log QSO" then
+					tell application process "WSJT-X"
+						click button "Ok" of group 1 of win
+						say "Logged"
+					end tell
+				end if
+			end repeat
+		on error errMsg number errorNumber
+			log errMsg
+			say "Error"
+		end try
+		delay 3
 	end repeat
 end tell
 ```
