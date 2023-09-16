@@ -21,8 +21,7 @@ from dbutils import connect_db
 from plugins.base import LOTW
 
 KEYS = ['call', 'status', 'band', 'snr', 'grid', 'cqzone', 'ituzone', 'country', 'continent',
-        'time', 'frequency', 'extra']
-REQ = f'SELECT {",".join(KEYS)} FROM cqcalls WHERE call REGEXP ?'
+        'time', 'extra']
 
 REQ_DEL = 'DELETE FROM cqcalls WHERE call = ? AND band = ?'
 
@@ -41,15 +40,23 @@ def dict_factory(cursor, row):
 def regexp(expr, data):
   return 1 if re.search(expr, data) else 0
 
-def find(dbname, call):
+def find(dbname, what, parg):
+  reqs = {
+    'call': 'WHERE call REGEXP ?',
+    'status': 'WHERE status = ?',
+    'country': 'WHERE country = ?',
+  }
+  req = f'SELECT {",".join(KEYS)} FROM cqcalls ' + reqs[what] + ' ORDER BY time ASC'
   lotw = LOTW()
   conn = connect_db(dbname)
   conn.row_factory = dict_factory
-  conn.create_function('regexp', 2, regexp)
+  if what == 'call':
+    conn.create_function('regexp', 2, regexp)
+
   try:
     with conn:
       curs = conn.cursor()
-      curs.execute(REQ, (call, ))
+      curs.execute(req, (parg, ))
       for record in curs:
         record['lotw'] = record['call'] in lotw
         yield record
@@ -62,10 +69,8 @@ def delete_record(dbname, call, band):
   with conn:
     curs = conn.cursor()
     curs.execute(REQ_DEL, (call, band))
-    if curs.rowcount > 0:
-      print(f'Call: {call}, Band: {band} - Deleted')
-    else:
-      print(f'Call: {call}, Band: {band} - Not found')
+  action = 'Deleted' if curs.rowcount > 0 else 'Not found'
+  print(f'{call} on {band}m band - {action}')
 
 def run(dbname):
   lotw = LOTW()
@@ -118,6 +123,8 @@ def run(dbname):
       print(tabulate.tabulate(fetch(), headers='keys'))
       print()
 
+def type_call(parg):
+  return parg.upper()
 
 def main():
   parser = ArgumentParser(description="ft8ctl call sign status")
@@ -127,27 +134,29 @@ def main():
                        help="Delete entry args are call band")
   exgroup.add_argument("-r", "--run", action="store_true", default=False,
                        help="Show the last 15 seconds entries ")
-  exgroup.add_argument('-c', '--call', help="Call sign")
+  exgroup.add_argument('-c', '--call', type=type_call, help="Call sign")
+  exgroup.add_argument('--country', help="Country")
+  exgroup.add_argument('--status', help="Status")
 
   opts = parser.parse_args()
 
   config = Config(opts.config)
   config = config['ft8ctrl']
+  records = []
 
   if opts.run:
     run(config.db_name)
   elif opts.delete:
-    records = find(config.db_name, f"^{opts.delete}$")
-    print(tabulate.tabulate(records, headers='keys'))
     delete_record(config.db_name, *opts.delete)
   elif opts.call:
-    call = opts.call.upper()
-    try:
-      records = find(config.db_name, call)
-      print(tabulate.tabulate(records, headers='keys'))
-    except SystemError as err:
-      print(f'{err} - Call expression error')
-      pass
+    records = find(config.db_name, 'call', opts.call)
+  elif opts.country:
+    records = find(config.db_name, 'country', opts.country)
+  elif opts.status:
+    records = find(config.db_name, 'status', opts.status)
+
+  if records:
+    print(tabulate.tabulate(records, headers='keys'))
 
 if __name__ == "__main__":
   main()
