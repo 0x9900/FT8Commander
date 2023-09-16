@@ -20,7 +20,9 @@ class Grid(CallSelector):
   def get(self, band):
     records = []
     for record in super().get(band):
-      if bool(self.expr.search(record['grid'])) ^ self.reverse:
-        records.append(record)
-
+      try:
+        if bool(self.expr.search(record['grid'])) ^ self.reverse:
+          records.append(record)
+      except TypeError as err:
+        self.log.warning('Unable to determine the grid: %s', record['packet']['Message'])
     return self.select_record(records)
