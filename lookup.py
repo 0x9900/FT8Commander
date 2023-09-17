@@ -6,12 +6,13 @@
 # All rights reserved.
 #
 
+import os
 import re
 import sqlite3
 import sys
 import time
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentError
 from datetime import datetime, timedelta
 
 import tabulate
@@ -76,9 +77,8 @@ def delete_record(dbname, call, band):
   action = 'Deleted' if curs.rowcount > 0 else 'Not found'
   print(f'{call} on {band}m band - {action}')
 
-def run(dbname):
+def run(dbname, delta=30):
   lotw = LOTW()
-  delta = 30
   req = f'SELECT {",".join(KEYS)} FROM cqcalls WHERE time > ?'
   conn = connect_db(dbname)
   conn.row_factory = dict_factory
@@ -95,37 +95,11 @@ def run(dbname):
       return records
 
   while True:
-    time.sleep(int(time.time()) % 5)
     records = fetch()
     if records:
       print(tabulate.tabulate(fetch(), headers='keys'))
       print()
-
-
-def run(dbname):
-  lotw = LOTW()
-  delta = 30
-  req = f'SELECT {",".join(KEYS)} FROM cqcalls WHERE time > ?'
-  conn = connect_db(dbname)
-  conn.row_factory = dict_factory
-
-  def fetch():
-    start = datetime.utcnow() - timedelta(seconds=delta)
-    with conn:
-      curs = conn.cursor()
-      curs.execute(req, (start, ))
-      records = []
-      for record in curs:
-        record['lotw'] = record['call'] in lotw
-        records.append(record)
-      return records
-
-  while True:
-    time.sleep(int(time.time()) % 5)
-    records = fetch()
-    if records:
-      print(tabulate.tabulate(fetch(), headers='keys'))
-      print()
+    time.sleep(15)
 
 def type_call(parg):
   return parg.upper()
@@ -134,10 +108,8 @@ def main():
   parser = ArgumentParser(description="ft8ctl call sign status")
   parser.add_argument("-C", "--config", help="Name of the configuration file")
   exgroup = parser.add_mutually_exclusive_group(required=True)
-  exgroup.add_argument("-d", "--delete", nargs=2,
-                       help="Delete entry args are call band")
-  exgroup.add_argument("-r", "--run", action="store_true", default=False,
-                       help="Show the last 15 seconds entries ")
+  exgroup.add_argument("-d", "--delete", type=type_call, help="Delete entry args are call band")
+  exgroup.add_argument("-r", "--run", type=int, help="Show the last seconds entries")
   exgroup.add_argument('-c', '--call', type=type_call, help="Call sign")
   exgroup.add_argument('--country', help="Country")
   exgroup.add_argument('--status', help="Status")
@@ -149,9 +121,12 @@ def main():
   records = []
 
   if opts.run:
-    run(config.db_name)
+    run(config.db_name, opts.run)
   elif opts.delete:
-    delete_record(config.db_name, *opts.delete)
+    if not opts.band:
+      print('Argument --band is missing')
+      return os.EX_USAGE
+    delete_record(config.db_name, opts.delete, opts.band)
   elif opts.call:
     records = find(config.db_name, 'call', opts.call, opts.band)
   elif opts.country:
@@ -161,6 +136,8 @@ def main():
 
   if records:
     print(tabulate.tabulate(records, headers='keys'))
+  return os.EX_OK
+
 
 if __name__ == "__main__":
-  main()
+  sys.exit(main())
