@@ -97,9 +97,14 @@ def run(dbname, delta=30):
   while True:
     records = fetch()
     if records:
+      clear()
       print(tabulate.tabulate(fetch(), headers='keys'))
       print()
     time.sleep(15)
+
+def clear():
+  if os.name == 'posix':
+    print("\033[H\033[2J")
 
 def type_call(parg):
   return parg.upper()
