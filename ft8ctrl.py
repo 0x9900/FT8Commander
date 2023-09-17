@@ -241,7 +241,7 @@ class LoadPlugins:
 def main():
   global LOG
   logging.basicConfig(
-    format='%(asctime)s - %(levelname)s %(lineno)3d:%(module)-8s - %(message)s',
+    format='%(asctime)s - %(levelname)-7s %(lineno)3d:%(module)-8s - %(message)s',
     datefmt='%H:%M:%S', level=logging.INFO
   )
   loglevel = os.getenv('LOG_LEVEL', 'INFO')

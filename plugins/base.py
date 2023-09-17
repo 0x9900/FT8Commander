@@ -65,7 +65,7 @@ class BlackList:
       pass
 
     tsize = os.get_terminal_size()
-    width = tsize.columns - 45
+    width = tsize.columns - 50
     _bl = ', '.join(c for c in cls.blacklist)[:width]
     _bl = _bl[:_bl.rindex(',')]
     cls.log.info("BlackList: %s...", _bl)
