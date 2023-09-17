@@ -133,7 +133,7 @@ def type_call(parg):
 def main():
   parser = ArgumentParser(description="ft8ctl call sign status")
   parser.add_argument("-C", "--config", help="Name of the configuration file")
-  exgroup = parser.add_mutually_exclusive_group()
+  exgroup = parser.add_mutually_exclusive_group(required=True)
   exgroup.add_argument("-d", "--delete", nargs=2,
                        help="Delete entry args are call band")
   exgroup.add_argument("-r", "--run", action="store_true", default=False,
