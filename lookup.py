@@ -40,13 +40,17 @@ def dict_factory(cursor, row):
 def regexp(expr, data):
   return 1 if re.search(expr, data) else 0
 
-def find(dbname, what, parg):
+def find(dbname, what, var, band=None):
   reqs = {
     'call': 'WHERE call REGEXP ?',
     'status': 'WHERE status = ?',
     'country': 'WHERE country = ?',
   }
-  req = f'SELECT {",".join(KEYS)} FROM cqcalls ' + reqs[what] + ' ORDER BY time ASC'
+  req = [f'SELECT {", ".join(KEYS)} FROM cqcalls']
+  req.append(reqs[what])
+  req.append('AND band = ?' if band else ' AND NULL is ?')
+  req.append(' ORDER BY time ASC')
+
   lotw = LOTW()
   conn = connect_db(dbname)
   conn.row_factory = dict_factory
@@ -56,7 +60,7 @@ def find(dbname, what, parg):
   try:
     with conn:
       curs = conn.cursor()
-      curs.execute(req, (parg, ))
+      curs.execute(' '.join(req), (var, band))
       for record in curs:
         record['lotw'] = record['call'] in lotw
         yield record
@@ -137,7 +141,7 @@ def main():
   exgroup.add_argument('-c', '--call', type=type_call, help="Call sign")
   exgroup.add_argument('--country', help="Country")
   exgroup.add_argument('--status', help="Status")
-
+  parser.add_argument('-b', '--band', type=int)
   opts = parser.parse_args()
 
   config = Config(opts.config)
@@ -149,11 +153,11 @@ def main():
   elif opts.delete:
     delete_record(config.db_name, *opts.delete)
   elif opts.call:
-    records = find(config.db_name, 'call', opts.call)
+    records = find(config.db_name, 'call', opts.call, opts.band)
   elif opts.country:
-    records = find(config.db_name, 'country', opts.country)
+    records = find(config.db_name, 'country', opts.country, opts.band)
   elif opts.status:
-    records = find(config.db_name, 'status', opts.status)
+    records = find(config.db_name, 'status', opts.status, opts.band)
 
   if records:
     print(tabulate.tabulate(records, headers='keys'))
