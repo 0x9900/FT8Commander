@@ -132,6 +132,7 @@ class DBInsert(Thread):
   INSERT = """
   INSERT INTO cqcalls VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(call, band) DO UPDATE SET snr = excluded.snr, packet = excluded.packet
+  WHERE status <> 2
   """
   UPDATE = "UPDATE cqcalls SET status=? WHERE status <> 2 and call = ? and band = ?"
   DELETE = "DELETE from cqcalls WHERE status= 1 AND call = ? and band = ?"
@@ -164,9 +165,6 @@ class DBInsert(Thread):
         except KeyError:
           logging.error('DXEntity for %s not found, this is probably a fake callsign', data['call'])
           continue
-
-        logging.debug("DB Write: %-7s %s, %s, %s", data['call'] + ',', data['continent'], data['grid'],
-                  data['country'])
         try:
           DBInsert.write(conn, data)
         except sqlite3.OperationalError as err:
@@ -195,6 +193,11 @@ class DBInsert(Thread):
         data.call, data.extra, data.packet['Time'], 0, data.packet['SNR'], data.grid,
         data.lat, data.lon, data.distance, data.azimuth, data.country, data.continent,
         data.cqzone, data.ituzone, data.frequency, data.band, data.packet))
+      if not curs.rowcount:
+        logging.debug("DB Write: already worked %s on %d band", data.call, data.band)
+      else:
+        logging.debug("DB Write: %s, %s, %s, %s", data.call, data.continent, data.grid,
+                      data.country)
 
   @staticmethod
   def status(conn, data):

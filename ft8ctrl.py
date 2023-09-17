@@ -242,9 +242,13 @@ def main():
   global LOG
   logging.basicConfig(
     format='%(asctime)s - %(levelname)-7s %(lineno)3d:%(module)-8s - %(message)s',
-    datefmt='%H:%M:%S', level=logging.INFO
+    datefmt='%H:%M:%S', level=logging.INFO,
+    handlers=[
+      logging.FileHandler("debug.log"),
+      logging.StreamHandler()
+    ]
   )
-  loglevel = os.getenv('LOG_LEVEL', 'INFO')
+  loglevel = os.getenv('LOG_LEVEL', 'INFO').upper()
   if loglevel not in logging._nameToLevel: # pylint: disable=protected-access
     logging.error('Log level "%s" does not exist, defaulting to INFO', loglevel)
     loglevel = logging.INFO
