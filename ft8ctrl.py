@@ -17,6 +17,7 @@ import time
 from argparse import ArgumentParser
 from datetime import datetime
 from importlib import import_module
+from logging.handlers import RotatingFileHandler
 from queue import Queue
 
 import geo
@@ -39,7 +40,9 @@ PARSERS = {
   'BROKENCQ': re.compile(r'^CQ\s(?P<call>\w+(|/\w+))$'),
 }
 
-LOG = logging.root
+LOGFILE_SIZE = 8<<16
+LOGFILE_NAME = 'ft8ctrl.log'
+LOG = logging.getLogger()
 
 class Sequencer:
   def __init__(self, config, queue, call_select):
@@ -244,7 +247,7 @@ def main():
     format='%(asctime)s - %(levelname)-7s %(lineno)3d:%(module)-8s - %(message)s',
     datefmt='%H:%M:%S', level=logging.INFO,
     handlers=[
-      logging.FileHandler("debug.log"),
+      RotatingFileHandler(LOGFILE_NAME, maxBytes=LOGFILE_SIZE, backupCount=5),
       logging.StreamHandler()
     ]
   )
