@@ -243,27 +243,36 @@ class LoadPlugins:
 
 def main():
   global LOG
-  logging.basicConfig(
-    format='%(asctime)s - %(levelname)-7s %(lineno)3d:%(module)-8s - %(message)s',
-    datefmt='%H:%M:%S', level=logging.INFO,
-    handlers=[
-      RotatingFileHandler(LOGFILE_NAME, maxBytes=LOGFILE_SIZE, backupCount=5),
-      logging.StreamHandler()
-    ]
-  )
-  loglevel = os.getenv('LOG_LEVEL', 'INFO').upper()
-  if loglevel not in logging._nameToLevel: # pylint: disable=protected-access
-    logging.error('Log level "%s" does not exist, defaulting to INFO', loglevel)
-    loglevel = logging.INFO
-  logging.root.setLevel(loglevel)
-  LOG = logging.getLogger('FT8Ctrl')
-
   parser = ArgumentParser(description="ft8ctl wsjt-x automation")
   parser.add_argument("-c", "--config", help="Name of the configuration file")
   opts = parser.parse_args()
 
   config = Config(opts.config)
   config = config['ft8ctrl']
+
+  formatter = logging.Formatter(
+    fmt='%(asctime)s - %(levelname)-7s %(lineno)3d:%(module)-8s - %(message)s',
+    datefmt='%H:%M:%S',
+  )
+
+  stream_handler = logging.StreamHandler()
+  stream_handler.setFormatter(formatter)
+
+  file_handler = RotatingFileHandler(getattr(config, 'logfile_name', LOGFILE_NAME),
+                                     maxBytes=LOGFILE_SIZE, backupCount=5)
+  file_handler.setFormatter(formatter)
+
+  loglevel = os.getenv('LOG_LEVEL', 'INFO').upper()
+  if loglevel not in logging._nameToLevel: # pylint: disable=protected-access
+    logging.error('Log level "%s" does not exist, defaulting to INFO', loglevel)
+    loglevel = logging.INFO
+
+  root = logging.getLogger()
+  root.setLevel(loglevel)
+  root.addHandler(stream_handler)
+  root.addHandler(file_handler)
+  LOG = logging.getLogger('FT8Ctrl')
+
   create_db(config.db_name)
 
   queue = Queue()

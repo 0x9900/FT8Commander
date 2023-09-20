@@ -21,6 +21,8 @@ from config import Config
 from dbutils import connect_db
 from plugins.base import LOTW
 
+RUN_TIME = 30
+
 KEYS = ['call', 'status', 'band', 'snr', 'grid', 'cqzone', 'ituzone', 'country', 'continent',
         'time', 'extra']
 
@@ -77,7 +79,7 @@ def delete_record(dbname, call, band):
   action = 'Deleted' if curs.rowcount > 0 else 'Not found'
   print(f'{call} on {band}m band - {action}')
 
-def run(dbname, delta=30):
+def run(dbname, delta=RUN_TIME):
   lotw = LOTW()
   req = f'SELECT {",".join(KEYS)} FROM cqcalls WHERE time > ?'
   conn = connect_db(dbname)
@@ -94,6 +96,7 @@ def run(dbname, delta=30):
         records.append(record)
       return records
 
+  clear()
   while True:
     records = fetch()
     if records:
@@ -113,9 +116,12 @@ def main():
   parser = ArgumentParser(description="ft8ctl call sign status")
   parser.add_argument("-C", "--config", help="Name of the configuration file")
   exgroup = parser.add_mutually_exclusive_group(required=True)
-  exgroup.add_argument("-d", "--delete", type=type_call, help="Delete entry args are call band")
-  exgroup.add_argument("-r", "--run", type=int, help="Show the last seconds entries")
-  exgroup.add_argument('-c', '--call', type=type_call, help="Call sign")
+  exgroup.add_argument("-d", "--delete", type=type_call,
+                       help="Delete entry args are call band")
+  exgroup.add_argument("-r", "--run", type=int, nargs='*',
+                       help=f"Run continuously every [default: {RUN_TIME}] seconds")
+  exgroup.add_argument('-c', '--call', type=type_call,
+                       help="Call sign")
   exgroup.add_argument('--country', help="Country")
   exgroup.add_argument('--status', help="Status")
   parser.add_argument('-b', '--band', type=int)
@@ -125,8 +131,9 @@ def main():
   config = config['ft8ctrl']
   records = []
 
-  if opts.run:
-    run(config.db_name, opts.run)
+  if opts.run is not None:
+    timeout = RUN_TIME if opts.run == [] else opts.run[0]
+    run(config.db_name, timeout)
   elif opts.delete:
     if not opts.band:
       print('Argument --band is missing')
@@ -145,4 +152,7 @@ def main():
 
 
 if __name__ == "__main__":
-  sys.exit(main())
+  try:
+    sys.exit(main())
+  except KeyboardInterrupt:
+    sys.exit(os.EX_OK)
