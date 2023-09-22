@@ -97,7 +97,10 @@ class _WSPacket:
       self._decode()
 
   def raw(self):
-    self._encode()
+    try:
+      self._encode()
+    except struct.error as err:
+      raise IOError(err) from None
     return self._packet[:self._index]
 
   def _decode(self):
