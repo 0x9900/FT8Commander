@@ -42,7 +42,6 @@ PARSERS = {
 
 LOGFILE_SIZE = 8<<16
 LOGFILE_NAME = 'ft8ctrl.log'
-LOG = logging.getLogger()
 
 class Sequencer:
   def __init__(self, config, queue, call_select):
@@ -80,7 +79,10 @@ class Sequencer:
       packet.Modifiers = wsjtx.Modifiers.SHIFT
 
     LOG.debug('Transmitting %s', packet)
-    self.sock.sendto(packet.raw(), ip_from)
+    try:
+      self.sock.sendto(packet.raw(), ip_from)
+    except IOError as err:
+      LOG.error("%s - %r", err, packet)
 
   def stop_transmit(self, ip_from):
     stop_pkt = wsjtx.WSHaltTx()
@@ -241,6 +243,13 @@ class LoadPlugins:
     return '<LoadPlugins> ' + ', '.join(p.__class__.__name__ for p in self.call_select)
 
 
+def getLogLevel():
+  loglevel = os.getenv('LOG_LEVEL', 'INFO').upper()
+  if loglevel not in logging._nameToLevel: # pylint: disable=protected-access
+    logging.error('Log level "%s" does not exist, defaulting to INFO', loglevel)
+    loglevel = logging.INFO
+  return loglevel
+
 def main():
   global LOG
   parser = ArgumentParser(description="ft8ctl wsjt-x automation")
@@ -254,24 +263,19 @@ def main():
     fmt='%(asctime)s - %(levelname)-7s %(lineno)3d:%(module)-8s - %(message)s',
     datefmt='%H:%M:%S',
   )
+  LOG = logging.getLogger()
+  LOG.setLevel(logging.DEBUG)
 
-  stream_handler = logging.StreamHandler()
-  stream_handler.setFormatter(formatter)
+  console_handler = logging.StreamHandler()
+  console_handler.setLevel(getLogLevel())
+  console_handler.setFormatter(formatter)
+  LOG.addHandler(console_handler)
 
   file_handler = RotatingFileHandler(getattr(config, 'logfile_name', LOGFILE_NAME),
                                      maxBytes=LOGFILE_SIZE, backupCount=5)
+  file_handler.setLevel(logging.DEBUG)
   file_handler.setFormatter(formatter)
-
-  loglevel = os.getenv('LOG_LEVEL', 'INFO').upper()
-  if loglevel not in logging._nameToLevel: # pylint: disable=protected-access
-    logging.error('Log level "%s" does not exist, defaulting to INFO', loglevel)
-    loglevel = logging.INFO
-
-  root = logging.getLogger()
-  root.setLevel(loglevel)
-  root.addHandler(stream_handler)
-  root.addHandler(file_handler)
-  LOG = logging.getLogger('FT8Ctrl')
+  LOG.addHandler(file_handler)
 
   create_db(config.db_name)
 

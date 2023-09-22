@@ -57,7 +57,7 @@ class BlackList:
 
     cls.blacklist = []
     cls._instance = super(BlackList, cls).__new__(cls)
-    cls.log = logging.getLogger(cls.__name__)
+    cls.log = logging.getLogger(f'ft8ctrl.{cls.__name__}')
     config = Config()
     try:
       cls.blacklist = [c.upper() for c in config.get('BlackList', [])]
@@ -97,7 +97,7 @@ class CallSelector(ABC):
     self.max_snr = getattr(self.config, "max_snr", MAX_SNR)
     self.delta = getattr(self.config, "delta", 29)
     self.debug = getattr(self.config, "debug", False)
-    self.log = logging.getLogger(self.__class__.__name__)
+    self.log = logging.getLogger(f'ft8ctrl.{self.__class__.__name__}')
     if self.debug:
       self.log.setLevel(logging.DEBUG)
 
@@ -157,7 +157,7 @@ class LOTW:
     if hasattr(cls, '_instance') and isinstance(cls._instance, cls):
       return cls._instance
 
-    cls.log = logging.getLogger(cls.__name__)
+    cls.log = logging.getLogger(f'ft8ctrl.{cls.__name__}')
     cls.log.info('LOTW database: %s (%d days)', LOTW_CACHE, LOTW_LASTSEEN)
 
     try:

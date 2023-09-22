@@ -26,7 +26,7 @@ class Config:
     return cls._instance
 
   def __init__(self, config_filename=None):
-    self.log = logging.getLogger('Config')
+    self.log = logging.getLogger('ft8ctrl.config')
     if self.config_data:
       return
 

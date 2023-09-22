@@ -71,6 +71,7 @@ def get_band(key):
     return 0
   return _bands[key]
 
+logger = logging.getLogger('ft8ctrl.dbutils')
 
 class DBJSONEncoder(json.JSONEncoder):
   """Special JSON encoder capable of encoding sets"""
@@ -106,13 +107,13 @@ def connect_db(db_name):
                            isolation_level=None)
     conn.row_factory = sqlite3.Row
   except sqlite3.OperationalError as err:
-    logging.error("Database: %s - %s", db_name, err)
+    logger.error("Database: %s - %s", db_name, err)
     sys.exit(os.EX_IOERR)
   return conn
 
 
 def create_db(db_name):
-  logging.info("Database: %s", db_name)
+  logger.info("Database: %s", db_name)
   with connect_db(db_name) as conn:
     curs = conn.cursor()
     curs.executescript(SQL_TABLE)
@@ -146,7 +147,7 @@ class DBInsert(Thread):
 
   def run(self):
     # pylint: disable=no-member
-    logging.info('Datebase Insert thread started')
+    logger.info('Datebase Insert thread started')
     conn = connect_db(self.db_name)
     # Run forever and consume the queue
     while True:
@@ -163,25 +164,25 @@ class DBInsert(Thread):
           data['cqzone'] = dxentity.cqzone
           data['ituzone'] = dxentity.ituzone
         except KeyError:
-          logging.error('DXEntity for %s not found, this is probably a fake callsign', data['call'])
+          logger.error('DXEntity for %s not found, this is probably a fake callsign', data['call'])
           continue
         try:
           DBInsert.write(conn, data)
         except sqlite3.OperationalError as err:
-          logging.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
+          logger.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
         except AttributeError as err:
-          logging.error(err)
-          logging.error(data)
+          logger.error(err)
+          logger.error(data)
       elif cmd == DBCommand.STATUS:
         try:
           DBInsert.status(conn, data)
         except sqlite3.OperationalError as err:
-          logging.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
+          logger.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
       elif cmd == DBCommand.DELETE:
         try:
           DBInsert.delete(conn, data)
         except sqlite3.OperationalError as err:
-          logging.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
+          logger.warning("Queue len: %d - Error: %s", self.queue.qsize(), err)
 
   @staticmethod
   def write(conn, call_info):
@@ -194,9 +195,9 @@ class DBInsert(Thread):
         data.lat, data.lon, data.distance, data.azimuth, data.country, data.continent,
         data.cqzone, data.ituzone, data.frequency, data.band, data.packet))
       if not curs.rowcount:
-        logging.debug("DB Write: already worked %s on %d band", data.call, data.band)
+        logger.debug("DB Write: already worked %s on %d band", data.call, data.band)
       else:
-        logging.debug("DB Write: %s, %s, %s, %s", data.call, data.continent, data.grid,
+        logger.debug("DB Write: %s, %s, %s, %s", data.call, data.continent, data.grid,
                       data.country)
 
   @staticmethod
@@ -204,14 +205,14 @@ class DBInsert(Thread):
     with conn:
       curs = conn.cursor()
       curs.execute(DBInsert.UPDATE, (data['status'], data['call'], data['band']))
-      logging.debug("%s (%s, %s, %d)", DBInsert.UPDATE, data['status'], data['call'], data['band'])
+      logger.debug("%s (%s, %s, %d)", DBInsert.UPDATE, data['status'], data['call'], data['band'])
 
   @staticmethod
   def delete(conn, data):
     with conn:
       curs = conn.cursor()
       curs.execute(DBInsert.DELETE, (data['call'], data['band']))
-      logging.debug("%s (%s:%s)", DBInsert.DELETE, data['call'], data['band'])
+      logger.debug("%s (%s:%s)", DBInsert.DELETE, data['call'], data['band'])
 
 class Purge(Thread):
   REQ = "DELETE FROM cqcalls WHERE status < 2 AND time < datetime('now','{} minute');"
@@ -221,11 +222,11 @@ class Purge(Thread):
     self.db_name = db_name
     self.purge_time = abs(purge_time) * -1 # make sure we have a negative number
     self.req = self.REQ.format(self.purge_time)
-    logging.debug(self.req)
+    logger.debug(self.req)
 
   def run(self):
     count = 0
-    logging.info('Purge thread started (retry_time %d minutes)', abs(self.purge_time))
+    logger.info('Purge thread started (retry_time %d minutes)', abs(self.purge_time))
     conn = connect_db(self.db_name)
     while True:
       with conn:
@@ -234,6 +235,6 @@ class Purge(Thread):
           curs.execute(self.req)
           count = curs.rowcount
         except sqlite3.OperationalError as err:
-          logging.error(err)
-      logging.debug('Purge %d Records', count)
+          logger.error(err)
+      logger.debug('Purge %d Records', count)
       time.sleep(60)
