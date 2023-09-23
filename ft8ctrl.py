@@ -196,8 +196,9 @@ class Sequencer:
             self.queue.put(
               (DBCommand.STATUS, {"call": packet.DXCall, "status": 1, "band": get_band(frequency)})
             )
-          LOG.debug("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
-                   packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
+          if packet.DXCall:
+            LOG.debug("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
+                      packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
 
       ## Outside the for loop ##
       if not pause and not tx_status:
@@ -249,6 +250,7 @@ def getLogLevel():
     logging.error('Log level "%s" does not exist, defaulting to INFO', loglevel)
     loglevel = logging.INFO
   return loglevel
+
 
 def main():
   global LOG
