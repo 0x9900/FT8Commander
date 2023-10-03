@@ -19,7 +19,7 @@ from urllib.error import HTTPError
 from urllib.request import urlretrieve
 
 CTY_URL = "https://www.country-files.com/cty/cty.plist"
-CTY_HOME = "~/.local"
+CTY_HOME = "/tmp"
 CTY_FILE = "cty.plist"
 CTY_DB = "cty.db"
 CTY_EXPIRE = 86400 * 7          # One week
@@ -45,12 +45,12 @@ class DXCCRecord:
 
 class DXCC:
 
-  def __init__(self):
+  def __init__(self, db_path=CTY_HOME):
     self._entities = defaultdict(set)
     self._max_len = 0
     self.get_prefix = lru_cache(maxsize=LRU_CACHE_SIZE)(self.get_prefix)
-    self._db = os.path.join(os.path.expanduser(CTY_HOME), CTY_DB)
-    cty_file = os.path.join(os.path.expanduser(CTY_HOME), CTY_FILE)
+    self._db = os.path.join(os.path.expanduser(db_path), CTY_DB)
+    cty_file = os.path.join(os.path.expanduser(db_path), CTY_FILE)
 
     try:
       fstat = os.stat(self._db)
