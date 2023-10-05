@@ -111,6 +111,6 @@ tell application "System Events"
 end tell
 ```
 
-[^1]: Signal To Noize Ratio
+[^1]: Signal To Noise Ratio
 
 [1]: https://gist.github.com/jc-m/f4ae181cdbac7adc8621e93a0c26c8e5
