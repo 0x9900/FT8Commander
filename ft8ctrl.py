@@ -40,7 +40,7 @@ PARSERS = {
   'BROKENCQ': re.compile(r'^CQ\s(?P<call>\w+(|/\w+))$'),
 }
 
-LOGFILE_SIZE = 8<<16
+LOGFILE_SIZE = 2<<18
 LOGFILE_NAME = 'ft8ctrl.log'
 
 class Sequencer:
