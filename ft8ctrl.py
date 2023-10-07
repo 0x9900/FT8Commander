@@ -30,7 +30,7 @@ from plugins.base import LOTW
 from config import Config
 
 SEQUENCE_TIME = {
-  'FT8':  (2, 17, 32, 47),
+  'FT8': (2, 17, 32, 47),
   'FT4': (1, 7, 13, 19, 25, 31, 37, 43, 49, 55),
 }
 
