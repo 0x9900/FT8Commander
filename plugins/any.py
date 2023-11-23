@@ -12,7 +12,7 @@ class Any(CallSelector):
   def __init__(self):
     super().__init__()
     self.continent = getattr(self.config, 'my_continent', 'NA')
-    self.log.info('My continent %s', self.continent)
+    self.log.debug('My continent %s', self.continent)
 
   def get(self, band):
     records = []
