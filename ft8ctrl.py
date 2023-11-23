@@ -42,8 +42,10 @@ PARSERS = {
 
 LOGFILE_SIZE = 2<<18
 LOGFILE_NAME = 'ft8ctrl.log'
+LOG = None
 
 class Sequencer:
+  # pylint: disable=too-many-instance-attributes
   def __init__(self, config, queue, call_select):
     self.db_name = config.db_name
     self.mycall = config.my_call
@@ -60,6 +62,8 @@ class Sequencer:
     self.logger_ip = getattr(config, 'logger_ip', None)
     self.logger_port = getattr(config, 'logger_port', None)
     self.logger_socket = None
+
+    self.pause = False
 
   def call_station(self, ip_from, data):
     LOG.info(('Calling: %s (%s), From: %s, SNR: %d, Distance: %d, Band: %dm '
@@ -132,12 +136,29 @@ class Sequencer:
       LOG.error('Error: %s - Message: %s', err, packet.Message)
     return (None, None)
 
+  def command_line(self, line):
+    if "HELP" in line or "?" in line:
+      LOG.info('The commands are: QUIT, CACHE, PAUSE, RUN, SELECTOR or HELP')
+    elif line == 'PAUSE':
+      LOG.warning('Paused...')
+      self.pause = True
+    elif line == 'RUN':
+      LOG.warning('Run...')
+      self.pause = False
+    elif line in ("SELECTOR", "SELECTORS"):
+      selector_list = [s.__class__.__name__ for s in self.selector.call_select]
+      LOG.warning('Selectors: %s', ', '.join(selector_list))
+    elif line == 'CACHE':
+      LOG.info("Cache LOTW: %s", LOTW.__contains__.cache_info())
+      LOG.info("Cache grid2latlon: %s", geo.grid2latlon.cache_info())
+    else:
+      LOG.warning('Unknown command: %s', line)
+
 
   def run(self):
     ip_from = None
     tx_status = False
     frequency = 0
-    pause = False
     current = None
     sequence = []
 
@@ -146,62 +167,46 @@ class Sequencer:
       for fdin in fds:
         if fdin == sys.stdin:
           line = fdin.readline().strip().upper()
-          if not line:
-            continue
           if line == 'QUIT':
             return
+          self.command_line(line)
 
-          if "HELP" in line or "?" in line:
-            LOG.info('The commands are: QUIT, CACHE, PAUSE, RUN, SELECTOR or HELP')
-          elif line == 'PAUSE':
-            LOG.warning('Paused...')
-            pause = True
-          elif line == 'RUN':
-            LOG.warning('Run...')
-            pause = False
-          elif line in ("SELECTOR", "SELECTORS"):
-            selector_list = [s.__class__.__name__ for s in self.selector.call_select]
-            LOG.warning('Selectors: %s', ', '.join(selector_list))
-          elif line == 'CACHE':
-            LOG.info("Cache LOTW: %s", LOTW.__contains__.cache_info())
-            LOG.info("Cache grid2latlon: %s", geo.grid2latlon.cache_info())
-          else:
-            LOG.warning('Unknown command: %s', line)
-          continue
-
-        rawdata, ip_from = fdin.recvfrom(1024)
-        packet = wsjtx.ft8_decode(rawdata)
-        if isinstance(packet, wsjtx.WSHeartbeat):
-          pass
-        elif isinstance(packet, wsjtx.WSLogged):
-          self.logcall(packet)
-          current = None
-        elif isinstance(packet, wsjtx.WSDecode):
-          name, match = self.decode(packet)
-          if name == 'REPLY' and match['call'] == current and match['to'] != self.mycall:
-            LOG.info("Stop Transmit: %s Replying to %s ", match['call'], match['to'])
-            self.stop_transmit(ip_from)
-            self.queue.put((DBCommand.DELETE, {"call": match['call'], "band": get_band(frequency)}))
-          elif name == 'CQ':
-            match['frequency'] = frequency
-            match['band'] = get_band(frequency)
-            match['packet'] = packet.as_dict()
-            self.queue.put((DBCommand.INSERT, match))
-          continue
-        elif isinstance(packet, wsjtx.WSStatus):
-          sequence = SEQUENCE_TIME[packet.TXMode]
-          frequency = packet.Frequency
-          tx_status = any([packet.Transmitting, packet.TXEnabled])
-          if (packet.Transmitting and packet.DXCall):
-            self.queue.put(
-              (DBCommand.STATUS, {"call": packet.DXCall, "status": 1, "band": get_band(frequency)})
-            )
-          if packet.DXCall:
-            LOG.debug("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
-                      packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
+        else:
+          rawdata, ip_from = fdin.recvfrom(1024)
+          packet = wsjtx.ft8_decode(rawdata)
+          if isinstance(packet, wsjtx.WSHeartbeat):
+            pass
+          elif isinstance(packet, wsjtx.WSLogged):
+            self.logcall(packet)
+            current = None
+          elif isinstance(packet, wsjtx.WSDecode):
+            name, match = self.decode(packet)
+            if name == 'REPLY' and match['call'] == current and match['to'] != self.mycall:
+              LOG.info("Stop Transmit: %s Replying to %s ", match['call'], match['to'])
+              self.stop_transmit(ip_from)
+              self.queue.put((DBCommand.DELETE,
+                              {"call": match['call'], "band": get_band(frequency)}))
+            elif name == 'CQ':
+              match['frequency'] = frequency
+              match['band'] = get_band(frequency)
+              match['packet'] = packet.as_dict()
+              self.queue.put((DBCommand.INSERT, match))
+            continue
+          elif isinstance(packet, wsjtx.WSStatus):
+            sequence = SEQUENCE_TIME[packet.TXMode]
+            frequency = packet.Frequency
+            tx_status = any([packet.Transmitting, packet.TXEnabled])
+            if (packet.Transmitting and packet.DXCall):
+              self.queue.put(
+                (DBCommand.STATUS,
+                 {"call": packet.DXCall, "status": 1, "band": get_band(frequency)})
+              )
+            if packet.DXCall:
+              LOG.debug("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
+                        packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
 
       ## Outside the for loop ##
-      if not pause and not tx_status:
+      if not self.pause and not tx_status:
         _now = datetime.utcnow()
         if _now.second in sequence:
           data = self.selector(get_band(frequency))
@@ -244,7 +249,7 @@ class LoadPlugins:
     return '<LoadPlugins> ' + ', '.join(p.__class__.__name__ for p in self.call_select)
 
 
-def getLogLevel():
+def get_log_level():
   loglevel = os.getenv('LOG_LEVEL', 'INFO').upper()
   if loglevel not in logging._nameToLevel: # pylint: disable=protected-access
     logging.error('Log level "%s" does not exist, defaulting to INFO', loglevel)
@@ -269,7 +274,7 @@ def main():
   LOG.setLevel(logging.DEBUG)
 
   console_handler = logging.StreamHandler()
-  console_handler.setLevel(getLogLevel())
+  console_handler.setLevel(get_log_level())
   console_handler.setFormatter(formatter)
   LOG.addHandler(console_handler)
 
