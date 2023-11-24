@@ -19,7 +19,6 @@
 # pylint: disable=consider-using-f-string,too-few-public-methods,too-many-public-methods
 
 import ctypes
-import math
 import struct
 
 from datetime import datetime
@@ -75,6 +74,11 @@ class SOMode(Enum):
   FOX = 6
   HOUND = 7
   ARRL_DIGI = 8
+
+  @classmethod
+  def _missing_(cls, value):
+    return cls.NONE
+
 
 SHEAD = struct.Struct('!III')
 

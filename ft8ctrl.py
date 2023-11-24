@@ -99,7 +99,7 @@ class Sequencer:
   def sendto_log(self, packet):
     if not self.logger_ip or not self.logger_port:
       return
-    packet.TXPower = random.randint(11, 17)
+    packet.TXPower = random.randint(13, 20)
     packet.Comments = "[ft8ctrl] " +  packet.Comments
     if not self.logger_socket:
       self.logger_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
