@@ -86,7 +86,7 @@ class CallSelector(ABC):
   # pylint: disable=too-many-instance-attributes
 
   REQ = ("SELECT * FROM cqcalls WHERE "
-         "status = 0 AND snr >= ? AND snr <= ? AND band = ? AND time > ?")
+         "status = 0 AND band = ? AND time > ?")
 
   def __init__(self):
     config = Config()
@@ -117,7 +117,7 @@ class CallSelector(ABC):
     start = datetime.utcnow() - timedelta(seconds=self.delta)
     with connect_db(self.db_name) as conn:
       curs = conn.cursor()
-      curs.execute(self.REQ, (self.min_snr, self.max_snr, band, start))
+      curs.execute(self.REQ, (band, start))
       for record in (dict(r) for r in curs):
         record['coef'] = self.coefficient(record['distance'], record['snr'])
         records.append(record)
@@ -126,6 +126,8 @@ class CallSelector(ABC):
   def select_record(self, records):
     records = self.sort(records)
     for record in records:
+      if not (self.min_snr < record['snr'] < self.max_snr):
+        continue
       if record['call'] in self.blacklist:
         self.log.debug('%s is blacklisted', record['call'])
         continue
