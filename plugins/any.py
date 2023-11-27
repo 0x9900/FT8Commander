@@ -17,8 +17,10 @@ class Any(CallSelector):
   def get(self, band):
     records = []
     for record in super().get(band):
-      if all([record['extra'] == 'DX', record['continent'] == self.continent]):
-        self.log.info("Ignore %s %s %s", record['call'], record['continent'], record['extra'])
-        continue
-      records.append(record)
+      if record['extra'] == 'DX' and record['continent'] == self.continent:
+        self.log.debug("Ignore %s %s (%s)", record['call'], record['continent'], record['extra'])
+      elif record['extra'] and record['extra'] != self.continent:
+        self.log.debug("Ignore %s %s (%s)", record['call'], record['continent'], record['extra'])
+      else:
+        records.append(record)
     return self.select_record(records)
