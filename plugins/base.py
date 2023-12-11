@@ -90,16 +90,20 @@ class CallSelector(ABC):
 
   def __init__(self):
     config = Config()
-    self.blacklist = BlackList()
     self.config = config.get(self.__class__.__name__)
+
+    self.debug = getattr(self.config, "debug", False)
+    if self.debug:
+      self.log.setLevel(logging.DEBUG)
+
+    self.blacklist = BlackList()
     self.db_name = config['ft8ctrl.db_name']
     self.min_snr = getattr(self.config, "min_snr", MIN_SNR)
     self.max_snr = getattr(self.config, "max_snr", MAX_SNR)
     self.delta = getattr(self.config, "delta", 29)
-    self.debug = getattr(self.config, "debug", False)
     self.log = logging.getLogger(f'ft8ctrl.{self.__class__.__name__}')
-    if self.debug:
-      self.log.setLevel(logging.DEBUG)
+    self.continent = getattr(self.config, 'my_continent', 'NA')
+    self.log.debug('My continent %s', self.continent)
 
     if getattr(self.config, "lotw_users_only", False):
       self.lotw = LOTW()
@@ -119,8 +123,11 @@ class CallSelector(ABC):
       curs = conn.cursor()
       curs.execute(self.REQ, (band, start))
       for record in (dict(r) for r in curs):
-        record['coef'] = self.coefficient(record['distance'], record['snr'])
-        records.append(record)
+        if record['extra'] == 'DX' and record['continent'] == self.continent:
+          self.log.warning("Ignore %s %s calling %s", record['call'], record['continent'], record['extra'])
+        else:
+          record['coef'] = self.coefficient(record['distance'], record['snr'])
+          records.append(record)
     return records
 
   def select_record(self, records):

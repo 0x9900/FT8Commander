@@ -7,13 +7,11 @@
 #
 import logging
 import os
-import random
 import re
 import select
 import socket
 import sys
 import time
-
 from argparse import ArgumentParser
 from datetime import datetime
 from importlib import import_module
@@ -22,16 +20,13 @@ from queue import Queue
 
 import geo
 import wsjtx
-
-from dbutils import DBCommand
-from dbutils import create_db, DBInsert, Purge, get_band
-from plugins.base import LOTW
-
 from config import Config
+from dbutils import DBCommand, DBInsert, Purge, create_db, get_band
+from plugins.base import LOTW
 
 SEQUENCE_TIME = {
   'FT8': (2, 17, 32, 47),
-  'FT4': (1, 7, 13, 19, 25, 31, 37, 43, 49, 55),
+  'FT4': (0, 6, 12, 18, 24, 30, 36, 42, 48, 54),
 }
 
 PARSERS = {
@@ -99,7 +94,8 @@ class Sequencer:
   def sendto_log(self, packet):
     if not self.logger_ip or not self.logger_port:
       return
-    packet.TXPower = random.randint(13, 20)
+    now = datetime.now()
+    packet.TXPower = 11 + (now.timetuple().tm_yday % 8)
     packet.Comments = "[ft8ctrl] " +  packet.Comments
     if not self.logger_socket:
       self.logger_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -179,6 +175,8 @@ class Sequencer:
           elif isinstance(packet, wsjtx.WSLogged):
             self.logcall(packet)
             current = None
+          elif isinstance(packet, wsjtx.WSADIF):
+            pass
           elif isinstance(packet, wsjtx.WSDecode):
             name, match = self.decode(packet)
             if name == 'REPLY' and match['call'] == current and match['to'] != self.mycall:
