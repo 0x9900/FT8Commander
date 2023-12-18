@@ -7,6 +7,7 @@
 
 from .base import CallSelector
 
+
 class Any(CallSelector):
 
   def __init__(self):

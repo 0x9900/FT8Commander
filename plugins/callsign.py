@@ -10,6 +10,7 @@ import re
 
 from .base import CallSelector
 
+
 class CallSign(CallSelector):
 
   def __init__(self):

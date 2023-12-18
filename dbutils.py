@@ -11,7 +11,6 @@ import os
 import sqlite3
 import sys
 import time
-
 from datetime import datetime
 from enum import Enum
 from threading import Thread

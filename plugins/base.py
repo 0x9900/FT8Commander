@@ -10,10 +10,9 @@ import logging
 import operator
 import os
 import time
-
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from functools import update_wrapper, lru_cache
+from functools import lru_cache, update_wrapper
 from urllib import request
 
 from config import Config

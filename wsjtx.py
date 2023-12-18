@@ -20,9 +20,7 @@
 
 import ctypes
 import struct
-
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 from enum import Enum
 
 WS_MAGIC = 0xADBCCBDA

@@ -12,7 +12,6 @@ import marshal
 import os
 import plistlib
 import time
-
 from collections import defaultdict
 from functools import lru_cache
 from urllib.error import HTTPError

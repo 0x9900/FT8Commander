@@ -11,8 +11,7 @@ import re
 import sqlite3
 import sys
 import time
-
-from argparse import ArgumentParser, ArgumentError
+from argparse import ArgumentError, ArgumentParser
 from datetime import datetime, timedelta
 
 import tabulate
