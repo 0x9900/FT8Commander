@@ -32,7 +32,7 @@ QSO.
 The following AppleScript example will automatically click on the Logging window.
 ** Note: Another application might steal the focus from the logging window, and the OK button might not be pressed on time. **
 
-```
+```applescript
 tell application "wsjtx" to activate
 say "w s j t x is active"
 
@@ -70,7 +70,7 @@ _Courtesy of my friend JC (W6IPA)_
 
 The original version can be found on [gist][1].
 
-```
+```applescript
 set bundleId to "org.k1jt.wsjtx"
 tell application id bundleId to activate
 
