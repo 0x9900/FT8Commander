@@ -5,6 +5,7 @@ __pycache__/
 m.py
 ft8ctrl.yaml
 *.ipynb
+*.swp
 
 ALL.TXT
 

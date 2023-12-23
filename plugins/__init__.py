@@ -6,11 +6,8 @@
 #
 
 from .any import Any
-from .continent import Continent
-from .continent import Country
-from .grid import Grid
 from .callsign import CallSign
-from .zones import CQZone
-from .zones import ITUZone
-from .special import DXCC100
-from .special import Extra
+from .continent import Continent, Country
+from .grid import Grid
+from .special import DXCC100, Extra
+from .zones import CQZone, ITUZone

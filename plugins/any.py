@@ -7,8 +7,14 @@
 
 from .base import CallSelector
 
+
 class Any(CallSelector):
 
+  def __init__(self):
+    super().__init__()
+
   def get(self, band):
-    records = super().get(band)
+    records = []
+    for record in super().get(band):
+      records.append(record)
     return self.select_record(records)

@@ -15,13 +15,13 @@ stations to calculate which one has the most chances of completing the
 QSO.
 
 ## Usage:
-
-  1. Start WSJT-X
-  2. Go to the directory FT8Commander
-  3. Copy the `ft8ctrl.yaml.sample` into `ft8ctrl.yaml`
-  4. Edit to the configuration file and enter your information
-  5, Start the python program `./ft8ctrl.py`
-  6. Watch WSJT-X making contacts.
+  1. Install the **DXEntity** package `pip install DXEntity`
+  2. Start WSJT-X
+  3. Go to the directory FT8Commander
+  4. Copy the `ft8ctrl.yaml.sample` into `ft8ctrl.yaml`
+  5. Edit to the configuration file and enter your information
+  6, Start the python program `./ft8ctrl.py`
+  7. Watch WSJT-X making contacts.
 
 > This program runs on MacOS and Linux.
 
@@ -111,6 +111,6 @@ tell application "System Events"
 end tell
 ```
 
-[^1]: Signal To Noize Ratio
+[^1]: Signal To Noise Ratio
 
 [1]: https://gist.github.com/jc-m/f4ae181cdbac7adc8621e93a0c26c8e5

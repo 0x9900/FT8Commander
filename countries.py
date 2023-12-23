@@ -4,10 +4,10 @@
 import os
 import sys
 import textwrap
-
 from argparse import ArgumentParser
 
 import DXEntity
+
 
 def clist():
   dxcc = DXEntity.DXCC()

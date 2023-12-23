@@ -10,8 +10,8 @@ Spherical geometry
 """
 
 import math
-
 from functools import lru_cache
+
 
 def haversine(val):
   # The haversine formula determines the great-circle distance between two points

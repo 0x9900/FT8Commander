@@ -6,7 +6,9 @@
 #
 
 from dbutils import connect_db
+
 from .base import CallSelector
+
 
 class DXCC100(CallSelector):
 
