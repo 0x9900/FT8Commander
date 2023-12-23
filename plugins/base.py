@@ -26,6 +26,7 @@ LOTW_LASTSEEN = 270             # Users who haven't used LOTW for 'n' days
 MIN_SNR = -50
 MAX_SNR = +50
 
+
 class SingleObjectCache():
   __slots__ = ['_data', '_age', 'maxage']
 
@@ -123,7 +124,9 @@ class CallSelector(ABC):
       curs.execute(self.REQ, (band, start))
       for record in (dict(r) for r in curs):
         if record['extra'] == 'DX' and record['continent'] == self.continent:
-          self.log.warning("Ignore %s %s calling %s", record['call'], record['continent'], record['extra'])
+          self.log.warning("Ignore %s %s calling %s",
+                           record['call'], record['continent'],
+                           record['extra'])
         else:
           record['coef'] = self.coefficient(record['distance'], record['snr'])
           records.append(record)
@@ -145,7 +148,7 @@ class CallSelector(ABC):
 
   @staticmethod
   def coefficient(dist, snr):
-    return dist * 10**(snr/10)
+    return dist * 10**(snr / 10)
 
   @staticmethod
   def sort(records):

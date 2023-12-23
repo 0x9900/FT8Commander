@@ -27,13 +27,13 @@ class Continent(CallSelector):
       else:
         self.log.warning('Ignoring continent: "%s" is not valid', cnt)
 
-
   def get(self, band):
     records = []
     for record in super().get(band):
       if (record['continent'] in self.c_list) ^ self.reverse:
         records.append(record)
     return self.select_record(records)
+
 
 class Country(CallSelector):
 

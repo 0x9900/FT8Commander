@@ -11,7 +11,7 @@ import re
 import sqlite3
 import sys
 import time
-from argparse import ArgumentError, ArgumentParser
+from argparse import ArgumentParser
 from datetime import datetime, timedelta
 
 import tabulate
@@ -27,20 +27,17 @@ KEYS = ['call', 'status', 'band', 'snr', 'grid', 'cqzone', 'ituzone', 'country',
 
 REQ_DEL = 'DELETE FROM cqcalls WHERE call = ? AND band = ?'
 
-def dict_factory(cursor, row):
-  data = {}
-  for idx, col in enumerate(cursor.description):
-    data[col[0]] = row[idx]
-  return data
 
 def dict_factory(cursor, row):
   data = {}
   for idx, col in enumerate(cursor.description):
     data[col[0]] = row[idx]
   return data
+
 
 def regexp(expr, data):
   return 1 if re.search(expr, data) else 0
+
 
 def find(dbname, what, var, band=None):
   reqs = {
@@ -69,6 +66,7 @@ def find(dbname, what, var, band=None):
   except sqlite3.OperationalError as err:
     raise SystemError(err)
 
+
 def delete_record(dbname, call, band):
   call = call.upper()
   conn = connect_db(dbname)
@@ -77,6 +75,7 @@ def delete_record(dbname, call, band):
     curs.execute(REQ_DEL, (call, band))
   action = 'Deleted' if curs.rowcount > 0 else 'Not found'
   print(f'{call} on {band}m band - {action}')
+
 
 def run(dbname, delta=RUN_TIME):
   lotw = LOTW()
@@ -104,12 +103,15 @@ def run(dbname, delta=RUN_TIME):
       print()
     time.sleep(15)
 
+
 def clear():
   if os.name == 'posix':
     print("\033[H\033[2J")
 
+
 def type_call(parg):
   return parg.upper()
+
 
 def main():
   parser = ArgumentParser(description="ft8ctl call sign status")

@@ -32,13 +32,16 @@ SEQUENCE_TIME = {
 
 PARSERS = {
   'REPLY': re.compile(r'^((?!CQ)(?P<to>\w+)(|/\w+)) (?P<call>\w+)(|/\w+) .*'),
-  'CQ': re.compile(r'^CQ\s(?:CQ\s|(?P<extra>[\S.]+)\s|)(?P<call>\w+(|/\w+))\s(?P<grid>[A-Z]{2}[0-9]{2})'),
+  'CQ': re.compile(r'''^CQ\s(?:CQ\s|(?P<extra>[\S.]+)\s|)
+                   (?P<call>\w+(|/\w+))\s
+                   (?P<grid>[A-Z]{2}[0-9]{2})''', re.VERBOSE),
   'BROKENCQ': re.compile(r'^CQ\s(?P<call>\w+(|/\w+))$'),
 }
 
-LOGFILE_SIZE = 2<<18
+LOGFILE_SIZE = 2 << 18
 LOGFILE_NAME = 'ft8ctrl.log'
 LOG = None
+
 
 class Sequencer:
   # pylint: disable=too-many-instance-attributes
@@ -52,7 +55,7 @@ class Sequencer:
     bind_addr = socket.gethostbyname(config.wsjt_ip)
     self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    self.sock.setblocking(False) # Set socket to non-blocking mode
+    self.sock.setblocking(False)  # Set socket to non-blocking mode
     self.sock.bind((bind_addr, config.wsjt_port))
 
     self.logger_ip = getattr(config, 'logger_ip', None)
@@ -97,7 +100,7 @@ class Sequencer:
       return
     now = datetime.now()
     packet.TXPower = 11 + (now.timetuple().tm_yday % 8)
-    packet.Comments = "[ft8ctrl] " +  packet.Comments
+    packet.Comments = "[ft8ctrl] " + packet.Comments
     if not self.logger_socket:
       self.logger_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     self.logger_socket.sendto(packet.raw(), (self.logger_ip, self.logger_port))
@@ -151,7 +154,6 @@ class Sequencer:
     else:
       LOG.warning('Unknown command: %s', line)
 
-
   def run(self):
     ip_from = None
     tx_status = False
@@ -204,7 +206,7 @@ class Sequencer:
               LOG.debug("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
                         packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
 
-      ## Outside the for loop ##
+      # Outside the for loop
       if not self.pause and not tx_status:
         _now = datetime.utcnow()
         if _now.second in sequence:
@@ -250,7 +252,7 @@ class LoadPlugins:
 
 def get_log_level():
   loglevel = os.getenv('LOG_LEVEL', 'INFO').upper()
-  if loglevel not in logging._nameToLevel: # pylint: disable=protected-access
+  if loglevel not in logging._nameToLevel:  # pylint: disable=protected-access
     logging.error('Log level "%s" does not exist, defaulting to INFO', loglevel)
     loglevel = logging.INFO
   return loglevel
@@ -301,6 +303,7 @@ def main():
     main_loop.run()
   except KeyboardInterrupt:
     LOG.info('^C pressed exiting')
+
 
 if __name__ == '__main__':
   main()

@@ -16,14 +16,16 @@ from enum import Enum
 from threading import Thread
 
 import DXEntity
+
 import geo
 
-# DBInsert commands.
 
+# DBInsert commands.
 class DBCommand(Enum):
   INSERT = 1
   STATUS = 2
   DELETE = 3
+
 
 SQL_TABLE = """
 CREATE TABLE IF NOT EXISTS cqcalls
@@ -51,6 +53,10 @@ CREATE INDEX IF NOT EXISTS idx_time on cqcalls (time DESC);
 CREATE INDEX IF NOT EXISTS idx_grid on cqcalls (grid ASC);
 """
 
+
+logger = logging.getLogger('ft8ctrl.dbutils')
+
+
 def get_band(key):
   _bands = {
     1: 160,
@@ -70,7 +76,6 @@ def get_band(key):
     return 0
   return _bands[key]
 
-logger = logging.getLogger('ft8ctrl.dbutils')
 
 class DBJSONEncoder(json.JSONEncoder):
   """Special JSON encoder capable of encoding sets"""
@@ -81,6 +86,7 @@ class DBJSONEncoder(json.JSONEncoder):
       return {'__type__': 'datetime', 'value': o.timestamp()}
 
     return super().default(o)
+
 
 class DBJSONDecoder(json.JSONDecoder):
   """Special JSON decoder capable of decoding sets encodes by IJSONEncoder"""
@@ -97,8 +103,10 @@ class DBJSONDecoder(json.JSONDecoder):
 
     return json_obj
 
+
 sqlite3.register_adapter(dict, DBJSONEncoder().encode)
 sqlite3.register_converter('JSON', lambda x: DBJSONDecoder().decode(x.decode('utf-8')))
+
 
 def connect_db(db_name):
   try:
@@ -197,7 +205,7 @@ class DBInsert(Thread):
         logger.debug("DB Write: already worked %s on %d band", data.call, data.band)
       else:
         logger.debug("DB Write: %s, %s, %s, %s", data.call, data.continent, data.grid,
-                      data.country)
+                     data.country)
 
   @staticmethod
   def status(conn, data):
@@ -213,13 +221,14 @@ class DBInsert(Thread):
       curs.execute(DBInsert.DELETE, (data['call'], data['band']))
       logger.debug("%s (%s:%s)", DBInsert.DELETE, data['call'], data['band'])
 
+
 class Purge(Thread):
   REQ = "DELETE FROM cqcalls WHERE status < 2 AND time < datetime('now','{} minute');"
 
   def __init__(self, db_name, purge_time):
     super().__init__()
     self.db_name = db_name
-    self.purge_time = abs(purge_time) * -1 # make sure we have a negative number
+    self.purge_time = abs(purge_time) * -1  # make sure we have a negative number
     self.req = self.REQ.format(self.purge_time)
     logger.debug(self.req)
 

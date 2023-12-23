@@ -24,6 +24,6 @@ class Grid(CallSelector):
       try:
         if bool(self.expr.search(record['grid'])) ^ self.reverse:
           records.append(record)
-      except TypeError as err:
+      except TypeError:
         self.log.warning('Unable to determine the grid: %s', record['packet']['Message'])
     return self.select_record(records)

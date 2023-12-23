@@ -15,6 +15,7 @@ def clist():
   for _country in sorted(countries):
     print(_country)
 
+
 def get_prefix(prefix):
   # pylint: disable=no-member
   dxcc = DXEntity.DXCC()
@@ -24,6 +25,7 @@ def get_prefix(prefix):
         f"{result.continent}, CQZone: "
         f"{result.cqzone}, ITUZone: {result.ituzone}")
 
+
 def check(ctry):
   dxcc = DXEntity.DXCC()
   ctry = ctry.upper()
@@ -31,6 +33,7 @@ def check(ctry):
   if ctry not in countries:
     raise KeyError(f'The country "{ctry}" cannot be found.')
   print(f'Country "{countries[ctry]}" found.')
+
 
 def country(ctry):
   dxcc = DXEntity.DXCC()
@@ -45,6 +48,7 @@ def country(ctry):
   ctry = countries[ctry]
   prefixes = ', '.join(dxcc.get_entity(ctry))
   print('\n'.join(wrapper.wrap(prefixes)))
+
 
 def main():
   parser = ArgumentParser(description="DXCC entities lookup")
@@ -71,6 +75,7 @@ def main():
   except KeyError as err:
     print(f"Error: {err}", file=sys.stderr)
     sys.exit(os.EX_DATAERR)
+
 
 if __name__ == "__main__":
   main()

@@ -17,6 +17,7 @@ def haversine(val):
   # The haversine formula determines the great-circle distance between two points
   return math.sin(val / 2) ** 2
 
+
 def distance(orig, dest):
   """Calculate the distance between 2 coordinates"""
   radius = 6371  # Earth radius in meters
@@ -29,6 +30,7 @@ def distance(orig, dest):
 
   axr = haversine(dphi) + math.cos(phi1) * math.cos(phi2) * haversine(dlambda)
   return 2 * radius * math.atan2(math.sqrt(axr), math.sqrt(1 - axr))
+
 
 def azimuth(orig, dest):
   """Calculate the direction of the `dest` point from the `origin` """
@@ -44,6 +46,7 @@ def azimuth(orig, dest):
   brng = math.atan2(x, y)
   brng = math.degrees(brng)
   return abs(int(brng))
+
 
 @lru_cache(maxsize=1024)
 def grid2latlon(maiden):

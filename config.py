@@ -15,9 +15,11 @@ import yaml
 CONFIG_FILENAME = "ft8ctrl.yaml"
 CONFIG_LOCATIONS = ['/etc', '~/.local', '.']
 
+
 class Config:
   _instance = None
   config_data = None
+
   def __new__(cls, *args, **kwargs):
     # pylint: disable=unused-argument
     if cls._instance is None:
@@ -60,7 +62,6 @@ class Config:
     except yaml.scanner.ScannerError as err:
       self.log.error('Configuration file syntax error: %s', err)
       sys.exit(os.EX_CONFIG)
-
 
   def __repr__(self):
     myself = super().__repr__()

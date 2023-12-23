@@ -29,11 +29,13 @@ WS_VERSION = '1.1'
 WS_REVISION = '1a'
 WS_CLIENTID = 'AUTOFS'
 
+
 class Mode(Enum):
   FT8 = '~'
   FT4 = '+'
 
 # Check the file
+
 
 class PacketType(Enum):
   HEARTBEAT = 0                 # Out/in
@@ -53,6 +55,7 @@ class PacketType(Enum):
   SWITCHCONFIGURATION = 14      # In
   CONFIGURE = 15                # In
 
+
 class Modifiers(Enum):
   NoModifier = 0x00
   SHIFT = 0x02
@@ -61,6 +64,7 @@ class Modifiers(Enum):
   META = 0x10
   KEYPAD = 0x20
   GroupSwitch = 0x40
+
 
 class SOMode(Enum):
   NONE = 0
@@ -79,8 +83,8 @@ class SOMode(Enum):
 
 
 SHEAD = struct.Struct('!III')
-
 JULIAN_ORIGIN = 2451545         # Julian date for 2000/01/01
+
 
 class _WSPacket:
 
@@ -375,7 +379,6 @@ class WSStatus(_WSPacket):
   @property
   def xMessage(self):
     return self._data['xMessage']
-
 
 
 class WSDecode(_WSPacket):
@@ -749,6 +752,7 @@ class WSClose(_WSPacket):
     super().__init__(pkt)
     self._packet_type = PacketType.CLOSE
 
+
 class WSReplay(_WSPacket):
   """Packet Type 7 Replay (In)"""
 
@@ -822,12 +826,14 @@ class WSWSPRDecode(_WSPacket):
     super().__init__(pkt)
     self._packet_type = PacketType.WSPRDECODE
 
+
 class WSLocation(_WSPacket):
   """Packet Type 11 Location (In)"""
 
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.LOCATION
+
 
 class WSADIF(_WSPacket):
   """Packet Type 12 Logged ADIF (Out)"""
@@ -938,6 +944,7 @@ class WSConfigure(_WSPacket):
     super().__init__(pkt)
     self._packet_type = PacketType.CONFIGURE
 
+
 def from_julian(jday, msec, *_):
   # this function doesn't work with dates prior to 2000
   epoch = datetime(2000, 1, 1)
@@ -945,6 +952,7 @@ def from_julian(jday, msec, *_):
   day = epoch + tdelta
   dtime = day + timedelta(microseconds=msec * 1000)
   return dtime
+
 
 def to_julian(dtime):
   # this function doesn't work with dates prior to 2000
@@ -954,15 +962,18 @@ def to_julian(dtime):
   milliseconds = int(delta.seconds * 1000)
   return (jday, milliseconds, 1, 0)
 
+
 def wstime2datetime(qtm):
   """wsjtx time containd the number of milliseconds since midnight"""
   tday_midnight = datetime.combine(datetime.utcnow(), datetime.min.time())
   return tday_midnight + timedelta(milliseconds=qtm)
 
+
 def datetime2wstime(dtime):
   """wsjtx time containd the number of milliseconds since midnight"""
   tday_midnight = datetime.combine(datetime.utcnow(), datetime.min.time())
   return int((dtime - tday_midnight).total_seconds() * 1000)
+
 
 def ft8_decode(pkt):
   """Look at the packets header and return a class corresponding to the packet"""
