@@ -288,9 +288,13 @@ def main():
   create_db(config.db_name)
 
   queue = Queue()
-  db_thread = DBInsert(config, queue)
-  db_thread.daemon = True
-  db_thread.start()
+  try:
+    db_thread = DBInsert(config, queue)
+    db_thread.daemon = True
+    db_thread.start()
+  except RuntimeError as err:
+    LOG.error("Configuration error: %s", err)
+    sys.exit()
 
   db_purge = Purge(config.db_name, config.retry_time)
   db_purge.daemon = True
@@ -298,9 +302,11 @@ def main():
 
   LOG.info('Call selector: %s', ', '.join(config.call_selector))
   call_select = LoadPlugins(config.call_selector)
-  main_loop = Sequencer(config, queue, call_select)
   try:
+    main_loop = Sequencer(config, queue, call_select)
     main_loop.run()
+  except OSError as err:
+    LOG.error('%s - %s', config.wsjt_ip, err.strerror)
   except KeyboardInterrupt:
     LOG.info('^C pressed exiting')
 

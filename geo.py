@@ -56,7 +56,8 @@ def grid2latlon(maiden):
 
   maiden = maiden.strip().upper()
   maiden_lg = len(maiden)
-  assert len(maiden) in [2, 4, 6, 8], 'Locator length error: 2, 4, 6 or 8 characters accepted'
+  if len(maiden) not in [2, 4, 6, 8]:
+    raise RuntimeError('Locator length error: 2, 4, 6 or 8 characters accepted')
 
   char_a = ord("A")
   lon = -180.0
