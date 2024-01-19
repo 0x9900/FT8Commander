@@ -150,7 +150,7 @@ class DBInsert(Thread):
     self.db_name = config.db_name
     self.queue = queue
     self.origin = geo.grid2latlon(config.my_grid)
-    self.dxe_lookup = DXEntity.DXCC(config.dxcc_path).lookup
+    self.dxe_lookup = DXEntity.DXCC().lookup
 
   def run(self):
     # pylint: disable=no-member
