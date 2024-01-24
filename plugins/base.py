@@ -12,6 +12,7 @@ import operator
 import os
 import ssl
 import time
+import warnings
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from functools import lru_cache, update_wrapper
@@ -20,6 +21,9 @@ from urllib import request
 
 from config import Config
 from dbutils import connect_db
+
+# Silence Python 3.12 deprecation warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 LOTW_URL = 'https://lotw.arrl.org/lotw-user-activity.csv'
 LOTW_CACHE = Path.home() / '.local/lotw_cache'
