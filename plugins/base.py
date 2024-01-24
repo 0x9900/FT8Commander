@@ -10,6 +10,7 @@ import logging
 import marshal
 import operator
 import os
+import ssl
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
@@ -186,7 +187,8 @@ class LOTW:
 
     if time.time() > age + LOTW_EXPIRE:
       cls.log.info('LOTW cache expired. Reload...')
-      with request.urlopen(LOTW_URL) as response:
+      context = ssl._create_unverified_context()
+      with request.urlopen(LOTW_URL, context=context) as response:
         if response.status != 200:
           raise SystemError('Download error') from None
         try:
