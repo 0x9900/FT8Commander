@@ -5,7 +5,7 @@
 # All rights reserved.
 #
 
-import dbm.gnu as gdbm
+import dbm
 import logging
 import operator
 import os
@@ -196,19 +196,19 @@ class LOTW:
     start_date = datetime.now() - timedelta(days=LOTW_LASTSEEN)
     charset = response.info().get_content_charset('utf-8')
     try:
-      with gdbm.open(LOTW_CACHE, 'c') as fdb:
+      with dbm.open(LOTW_CACHE, 'c') as fdb:
         for line in (r.decode(charset) for r in response):
           fields = list(line.rstrip().split(','))
           if datetime.strptime(fields[1], '%Y-%m-%d') > start_date:
             fdb[fields[0].upper()] = fields[1]
-    except gdbm.error as err:
+    except dbm.error as err:
       raise IOError from err
 
   def __contains__(self, key):
     try:
-      with gdbm.open(LOTW_CACHE, 'r') as fdb:
+      with dbm.open(LOTW_CACHE, 'r') as fdb:
         return key.upper() in fdb
-    except gdbm.error as err:
+    except dbm.error as err:
       logging.error(err)
       raise SystemError(err) from None
 
