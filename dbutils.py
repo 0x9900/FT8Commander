@@ -7,9 +7,7 @@
 
 import json
 import logging
-import os
 import sqlite3
-import sys
 import time
 from datetime import datetime
 from enum import Enum
@@ -115,7 +113,7 @@ def connect_db(db_name):
     conn.row_factory = sqlite3.Row
   except sqlite3.OperationalError as err:
     logger.error("Database: %s - %s", db_name, err)
-    sys.exit(os.EX_IOERR)
+    raise SystemExit('Database Error') from None
   return conn
 
 

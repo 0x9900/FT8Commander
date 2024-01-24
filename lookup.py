@@ -64,7 +64,7 @@ def find(dbname, what, var, band=None):
         record['lotw'] = record['call'] in lotw
         yield record
   except sqlite3.OperationalError as err:
-    raise SystemError(err)
+    raise SystemError(err) from None
 
 
 def delete_record(dbname, call, band):
@@ -138,7 +138,7 @@ def main():
   elif opts.delete:
     if not opts.band:
       print('Argument --band is missing')
-      return os.EX_USAGE
+      return
     delete_record(config.db_name, opts.delete, opts.band)
   elif opts.call:
     records = find(config.db_name, 'call', opts.call, opts.band)
@@ -149,11 +149,11 @@ def main():
 
   if records:
     print(tabulate.tabulate(records, headers='keys'))
-  return os.EX_OK
+  return
 
 
 if __name__ == "__main__":
   try:
     sys.exit(main())
   except KeyboardInterrupt:
-    sys.exit(os.EX_OK)
+    raise SystemExit('^C pressed') from None

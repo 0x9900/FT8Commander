@@ -7,24 +7,28 @@
 
 import dbm
 import logging
+import marshal
 import operator
 import os
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from functools import lru_cache, update_wrapper
+from pathlib import Path
 from urllib import request
 
 from config import Config
 from dbutils import connect_db
 
 LOTW_URL = 'https://lotw.arrl.org/lotw-user-activity.csv'
-LOTW_CACHE = '/tmp/lotw_cache.db'
+LOTW_CACHE = Path.home() / '.local/lotw_cache'
 LOTW_EXPIRE = 7 * 86400
 LOTW_LASTSEEN = 270             # Users who haven't used LOTW for 'n' days
 
 MIN_SNR = -50
 MAX_SNR = +50
+
+ZERO = marshal.dumps(0)
 
 
 class SingleObjectCache():
@@ -91,6 +95,7 @@ class CallSelector(ABC):
   def __init__(self):
     config = Config()
     self.config = config.get(self.__class__.__name__)
+    self.log = logging.getLogger(f'ft8ctrl.{self.__class__.__name__}')
 
     self.debug = getattr(self.config, "debug", False)
     if self.debug:
@@ -101,7 +106,6 @@ class CallSelector(ABC):
     self.min_snr = getattr(self.config, "min_snr", MIN_SNR)
     self.max_snr = getattr(self.config, "max_snr", MAX_SNR)
     self.delta = getattr(self.config, "delta", 29)
-    self.log = logging.getLogger(f'ft8ctrl.{self.__class__.__name__}')
     self.continent = getattr(self.config, 'my_continent', 'NA')
     self.log.debug('My continent %s', self.continent)
 
@@ -135,7 +139,7 @@ class CallSelector(ABC):
   def select_record(self, records):
     records = self.sort(records)
     for record in records:
-      if not (self.min_snr < record['snr'] < self.max_snr):
+      if not self.min_snr < record['snr'] < self.max_snr:
         continue
       if record['call'] in self.blacklist:
         self.log.debug('%s is blacklisted', record['call'])
@@ -171,11 +175,16 @@ class LOTW:
     cls.log = logging.getLogger(f'ft8ctrl.{cls.__name__}')
     cls.log.info('LOTW database: %s (%d days)', LOTW_CACHE, LOTW_LASTSEEN)
 
+    if not LOTW_CACHE.parent.exists():
+      LOTW_CACHE.parent.mkdir(parents=True)
+
     try:
-      _st = os.stat(LOTW_CACHE)
-      if time.time() > _st.st_mtime + LOTW_EXPIRE:
-        raise FileNotFoundError
-    except (FileNotFoundError, EOFError):
+      with dbm.open(str(LOTW_CACHE), 'r') as fdb:
+        age = marshal.loads(fdb.get('__age__', ZERO))
+    except dbm.error:
+      age = 0
+
+    if time.time() > age + LOTW_EXPIRE:
       cls.log.info('LOTW cache expired. Reload...')
       with request.urlopen(LOTW_URL) as response:
         if response.status != 200:
@@ -196,17 +205,18 @@ class LOTW:
     start_date = datetime.now() - timedelta(days=LOTW_LASTSEEN)
     charset = response.info().get_content_charset('utf-8')
     try:
-      with dbm.open(LOTW_CACHE, 'c') as fdb:
+      with dbm.open(str(LOTW_CACHE), 'c') as fdb:
         for line in (r.decode(charset) for r in response):
           fields = list(line.rstrip().split(','))
           if datetime.strptime(fields[1], '%Y-%m-%d') > start_date:
-            fdb[fields[0].upper()] = fields[1]
+            fdb[fields[0].upper()] = marshal.dumps(fields[1])
+        fdb['__age__'] = marshal.dumps(int(time.time()))
     except dbm.error as err:
       raise IOError from err
 
   def __contains__(self, key):
     try:
-      with dbm.open(LOTW_CACHE, 'r') as fdb:
+      with dbm.open(str(LOTW_CACHE), 'r') as fdb:
         return key.upper() in fdb
     except dbm.error as err:
       logging.error(err)

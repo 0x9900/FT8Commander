@@ -7,8 +7,7 @@
 #
 
 import logging
-import os
-import sys
+from pathlib import Path
 
 import yaml
 
@@ -33,35 +32,38 @@ class Config:
       return
 
     if config_filename:
-      filename = config_filename
-      if os.path.exists(filename):
+      filename = Path(config_filename).expanduser()
+      if filename.exists():
         self.log.debug('Reading config file: %s', filename)
-        self._readconfig(filename)
+        self.config_data = self._readconfig(filename)
+        self.config_filename = filename
         return
-      self.log.error('User configuration file "%s" not found. '
-                     'Opening the default confuration file.', filename)
+      self.log.error('User configuration file "%s" not found.', filename)
+      raise SystemExit('Configuration file error')
 
     config_filename = CONFIG_FILENAME
     for path in CONFIG_LOCATIONS:
-      filename = os.path.expanduser(os.path.join(path, config_filename))
-      if os.path.exists(filename):
+      filename = Path(path).joinpath(config_filename).expanduser()
+      if filename.exists():
         self.log.debug('Reading config file: %s', filename)
-        self._readconfig(filename)
+        self.config_data = self._readconfig(filename)
+        self.config_filename = filename
         return
 
-    self.log.error('Configuration file "%s" not found', config_filename)
-    sys.exit(os.EX_CONFIG)
+    self.log.error('Configuration file found')
+    raise SystemExit('Config error')
 
   def _readconfig(self, filename):
     try:
-      self.config_filename = filename
-      self.config_data = self._read_config(filename)
+      with open(filename, 'r', encoding='utf-8') as confd:
+        config_data = yaml.safe_load(confd)
     except ValueError as err:
       self.log.error('Configuration error "%s"', err)
-      sys.exit(os.EX_CONFIG)
-    except yaml.scanner.ScannerError as err:
+      raise SystemExit('Config error') from None
+    except (yaml.parser.ParserError, yaml.scanner.ScannerError) as err:
       self.log.error('Configuration file syntax error: %s', err)
-      sys.exit(os.EX_CONFIG)
+      raise SystemExit('Config file error') from None
+    return config_data
 
   def __repr__(self):
     myself = super().__repr__()
@@ -97,9 +99,3 @@ class Config:
     if attribute not in config:
       raise KeyError(f'"Config" object has no attribute "{attr}"')
     return config[attribute]
-
-  @staticmethod
-  def _read_config(filename):
-    with open(filename, 'r', encoding='utf-8') as confd:
-      configuration = yaml.safe_load(confd)
-    return configuration

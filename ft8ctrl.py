@@ -160,6 +160,7 @@ class Sequencer:
     frequency = 0
     current = None
     sequence = []
+    LOG.info('ft8ctl running...')
 
     while True:
       fds, _, _ = select.select([self.sock, sys.stdin], [], [], .7)
@@ -223,6 +224,7 @@ class LoadPlugins:
 
   def __init__(self, plugins):
     """Load and initialize plugins"""
+    LOG.info('Call selector: %s', ', '.join(plugins))
     self.call_select = []
     if isinstance(plugins, str):
       plugins = [plugins]
@@ -231,7 +233,11 @@ class LoadPlugins:
       *module_name, class_name = plugin.split('.')
       module_name = '.'.join(['plugins'] + module_name)
       module = import_module(module_name)
-      klass = getattr(module, class_name)
+      try:
+        klass = getattr(module, class_name)
+      except AttributeError:
+        LOG.error('Call selector not found: "%s"', class_name)
+        raise SystemExit(f'"{class_name}" not found')
       self.call_select.append(klass())
 
   def __call__(self, band):
@@ -294,13 +300,12 @@ def main():
     db_thread.start()
   except RuntimeError as err:
     LOG.error("Configuration error: %s", err)
-    sys.exit()
+    raise SystemExit('Configuration Error') from None
 
   db_purge = Purge(config.db_name, config.retry_time)
   db_purge.daemon = True
   db_purge.start()
 
-  LOG.info('Call selector: %s', ', '.join(config.call_selector))
   call_select = LoadPlugins(config.call_selector)
   try:
     main_loop = Sequencer(config, queue, call_select)

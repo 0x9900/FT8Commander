@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 
-import os
 import sys
 import textwrap
 from argparse import ArgumentParser
@@ -74,7 +73,7 @@ def main():
       get_prefix(opts.prefix)
   except KeyError as err:
     print(f"Error: {err}", file=sys.stderr)
-    sys.exit(os.EX_DATAERR)
+    raise SystemExit('Argument Error') from None
 
 
 if __name__ == "__main__":
