@@ -11,19 +11,17 @@ import os
 import re
 import select
 import socket
-import sys
 import time
 from argparse import ArgumentParser
 from datetime import datetime
 from importlib import import_module
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from queue import Queue
 
-import geo
 import wsjtx
 from config import Config
 from dbutils import DBCommand, DBInsert, Purge, create_db, get_band
-from plugins.base import LOTW
 
 SEQUENCE_TIME = {
   'FT8': (2, 17, 32, 47),
@@ -46,7 +44,6 @@ LOG = None
 class Sequencer:
   # pylint: disable=too-many-instance-attributes
   def __init__(self, config, queue, call_select):
-    self.db_name = config.db_name
     self.mycall = config.my_call
     self.queue = queue
     self.selector = call_select
@@ -136,75 +133,51 @@ class Sequencer:
       LOG.error('Error: %s - Message: %s', err, packet.Message)
     return (None, None)
 
-  def command_line(self, line):
-    if "HELP" in line or "?" in line:
-      LOG.info('The commands are: QUIT, CACHE, PAUSE, RUN, SELECTOR or HELP')
-    elif line == 'PAUSE':
-      LOG.warning('Paused...')
-      self.pause = True
-    elif line == 'RUN':
-      LOG.warning('Run...')
-      self.pause = False
-    elif line in ("SELECTOR", "SELECTORS"):
-      selector_list = [s.__class__.__name__ for s in self.selector.call_select]
-      LOG.warning('Selectors: %s', ', '.join(selector_list))
-    elif line == 'CACHE':
-      LOG.info("Cache LOTW: %s", LOTW.__contains__.cache_info())
-      LOG.info("Cache grid2latlon: %s", geo.grid2latlon.cache_info())
-    else:
-      LOG.warning('Unknown command: %s', line)
-
   def run(self):
     ip_from = None
     tx_status = False
     frequency = 0
     current = None
     sequence = []
+    LOG.info('ft8ctl running...')
 
     while True:
-      fds, _, _ = select.select([self.sock, sys.stdin], [], [], .7)
+      fds, _, _ = select.select([self.sock], [], [], .7)
       for fdin in fds:
-        if fdin == sys.stdin:
-          line = fdin.readline().strip().upper()
-          if line == 'QUIT':
-            return
-          self.command_line(line)
-
-        else:
-          rawdata, ip_from = fdin.recvfrom(1024)
-          packet = wsjtx.ft8_decode(rawdata)
-          if isinstance(packet, wsjtx.WSHeartbeat):
-            pass
-          elif isinstance(packet, wsjtx.WSLogged):
-            self.logcall(packet)
-            current = None
-          elif isinstance(packet, wsjtx.WSADIF):
-            pass
-          elif isinstance(packet, wsjtx.WSDecode):
-            name, match = self.decode(packet)
-            if name == 'REPLY' and match['call'] == current and match['to'] != self.mycall:
-              LOG.info("Stop Transmit: %s Replying to %s ", match['call'], match['to'])
-              self.stop_transmit(ip_from)
-              self.queue.put((DBCommand.DELETE,
-                              {"call": match['call'], "band": get_band(frequency)}))
-            elif name == 'CQ':
-              match['frequency'] = frequency
-              match['band'] = get_band(frequency)
-              match['packet'] = packet.as_dict()
-              self.queue.put((DBCommand.INSERT, match))
-            continue
-          elif isinstance(packet, wsjtx.WSStatus):
-            sequence = SEQUENCE_TIME[packet.TXMode]
-            frequency = packet.Frequency
-            tx_status = any([packet.Transmitting, packet.TXEnabled])
-            if (packet.Transmitting and packet.DXCall):
-              self.queue.put(
-                (DBCommand.STATUS,
-                 {"call": packet.DXCall, "status": 1, "band": get_band(frequency)})
-              )
-            if packet.DXCall:
-              LOG.debug("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
-                        packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
+        rawdata, ip_from = fdin.recvfrom(1024)
+        packet = wsjtx.ft8_decode(rawdata)
+        if isinstance(packet, wsjtx.WSHeartbeat):
+          pass
+        elif isinstance(packet, wsjtx.WSLogged):
+          self.logcall(packet)
+          current = None
+        elif isinstance(packet, wsjtx.WSADIF):
+          pass
+        elif isinstance(packet, wsjtx.WSDecode):
+          name, match = self.decode(packet)
+          if name == 'REPLY' and match['call'] == current and match['to'] != self.mycall:
+            LOG.info("Stop Transmit: %s Replying to %s ", match['call'], match['to'])
+            self.stop_transmit(ip_from)
+            self.queue.put((DBCommand.DELETE,
+                            {"call": match['call'], "band": get_band(frequency)}))
+          elif name == 'CQ':
+            match['frequency'] = frequency
+            match['band'] = get_band(frequency)
+            match['packet'] = packet.as_dict()
+            self.queue.put((DBCommand.INSERT, match))
+          continue
+        elif isinstance(packet, wsjtx.WSStatus):
+          sequence = SEQUENCE_TIME[packet.TXMode]
+          frequency = packet.Frequency
+          tx_status = any([packet.Transmitting, packet.TXEnabled])
+          if (packet.Transmitting and packet.DXCall):
+            self.queue.put(
+              (DBCommand.STATUS,
+               {"call": packet.DXCall, "status": 1, "band": get_band(frequency)})
+            )
+          if packet.DXCall:
+            LOG.debug("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
+                      packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
 
       # Outside the for loop
       if not self.pause and not tx_status:
@@ -223,6 +196,7 @@ class LoadPlugins:
 
   def __init__(self, plugins):
     """Load and initialize plugins"""
+    LOG.info('Call selector: %s', ', '.join(plugins))
     self.call_select = []
     if isinstance(plugins, str):
       plugins = [plugins]
@@ -231,7 +205,11 @@ class LoadPlugins:
       *module_name, class_name = plugin.split('.')
       module_name = '.'.join(['plugins'] + module_name)
       module = import_module(module_name)
-      klass = getattr(module, class_name)
+      try:
+        klass = getattr(module, class_name)
+      except AttributeError:
+        LOG.error('Call selector not found: "%s"', class_name)
+        raise SystemExit(f'"{class_name}" not found') from None
       self.call_select.append(klass())
 
   def __call__(self, band):
@@ -279,28 +257,28 @@ def main():
   console_handler.setFormatter(formatter)
   LOG.addHandler(console_handler)
 
-  file_handler = RotatingFileHandler(getattr(config, 'logfile_name', LOGFILE_NAME),
-                                     maxBytes=LOGFILE_SIZE, backupCount=5)
+  logfile_name = Path(getattr(config, 'logfile_name', LOGFILE_NAME)).expanduser()
+  file_handler = RotatingFileHandler(logfile_name, maxBytes=LOGFILE_SIZE, backupCount=5)
   file_handler.setLevel(logging.DEBUG)
   file_handler.setFormatter(formatter)
   LOG.addHandler(file_handler)
 
-  create_db(config.db_name)
+  db_name = Path(config.db_name).expanduser()
+  create_db(db_name)
 
   queue = Queue()
   try:
-    db_thread = DBInsert(config, queue)
+    db_thread = DBInsert(db_name, queue, config.my_grid)
     db_thread.daemon = True
     db_thread.start()
   except RuntimeError as err:
     LOG.error("Configuration error: %s", err)
-    sys.exit()
+    raise SystemExit('Configuration Error') from None
 
-  db_purge = Purge(config.db_name, config.retry_time)
+  db_purge = Purge(db_name, config.retry_time)
   db_purge.daemon = True
   db_purge.start()
 
-  LOG.info('Call selector: %s', ', '.join(config.call_selector))
   call_select = LoadPlugins(config.call_selector)
   try:
     main_loop = Sequencer(config, queue, call_select)

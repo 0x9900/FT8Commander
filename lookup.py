@@ -13,6 +13,7 @@ import sys
 import time
 from argparse import ArgumentParser
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import tabulate
 
@@ -64,7 +65,7 @@ def find(dbname, what, var, band=None):
         record['lotw'] = record['call'] in lotw
         yield record
   except sqlite3.OperationalError as err:
-    raise SystemError(err)
+    raise SystemError(err) from None
 
 
 def delete_record(dbname, call, band):
@@ -130,30 +131,31 @@ def main():
 
   config = Config(opts.config)
   config = config['ft8ctrl']
+  db_name = Path(config.db_name).expanduser()
   records = []
 
   if opts.run is not None:
     timeout = RUN_TIME if opts.run == [] else opts.run[0]
-    run(config.db_name, timeout)
+    run(db_name, timeout)
   elif opts.delete:
     if not opts.band:
       print('Argument --band is missing')
-      return os.EX_USAGE
-    delete_record(config.db_name, opts.delete, opts.band)
+      return
+    delete_record(db_name, opts.delete, opts.band)
   elif opts.call:
-    records = find(config.db_name, 'call', opts.call, opts.band)
+    records = find(db_name, 'call', opts.call, opts.band)
   elif opts.country:
-    records = find(config.db_name, 'country', opts.country, opts.band)
+    records = find(db_name, 'country', opts.country, opts.band)
   elif opts.status:
-    records = find(config.db_name, 'status', opts.status, opts.band)
+    records = find(db_name, 'status', opts.status, opts.band)
 
   if records:
     print(tabulate.tabulate(records, headers='keys'))
-  return os.EX_OK
+  return
 
 
 if __name__ == "__main__":
   try:
     sys.exit(main())
   except KeyboardInterrupt:
-    sys.exit(os.EX_OK)
+    raise SystemExit('^C pressed') from None
