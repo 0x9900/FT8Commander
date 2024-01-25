@@ -107,7 +107,7 @@ class CallSelector(ABC):
       self.log.setLevel(logging.DEBUG)
 
     self.blacklist = BlackList()
-    self.db_name = config['ft8ctrl.db_name']
+    self.db_name = Path(config['ft8ctrl.db_name']).expanduser()
     self.min_snr = getattr(self.config, "min_snr", MIN_SNR)
     self.max_snr = getattr(self.config, "max_snr", MAX_SNR)
     self.delta = getattr(self.config, "delta", 29)
