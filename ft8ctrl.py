@@ -17,9 +17,8 @@ from argparse import ArgumentParser
 from datetime import datetime
 from importlib import import_module
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from queue import Queue
-
-from libpath import Path
 
 import geo
 import wsjtx
