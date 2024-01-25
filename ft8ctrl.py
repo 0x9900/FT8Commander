@@ -257,8 +257,8 @@ def main():
   console_handler.setFormatter(formatter)
   LOG.addHandler(console_handler)
 
-  file_handler = RotatingFileHandler(getattr(config, 'logfile_name', LOGFILE_NAME),
-                                     maxBytes=LOGFILE_SIZE, backupCount=5)
+  logfile_name = Path(getattr(config, 'logfile_name', LOGFILE_NAME)).expanduser()
+  file_handler = RotatingFileHandler(logfile_name, maxBytes=LOGFILE_SIZE, backupCount=5)
   file_handler.setLevel(logging.DEBUG)
   file_handler.setFormatter(formatter)
   LOG.addHandler(file_handler)
