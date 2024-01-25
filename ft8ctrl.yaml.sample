@@ -5,19 +5,25 @@
 #
 
 ft8ctrl:
-  my_call: <MY-CALL>
-  my_grid: <MY-GRID ie: CM87vm>
-  db_name: /tmp/ft8ctrl.sql
+  my_call: -- CALL_SIGN --
+  my_grid: -- GRID --
+  db_name: ~/ft8ctl.sql
   wsjt_ip: 127.0.0.1
   wsjt_port: 2238
   follow_frequency: False
   retry_time: 15                 # In minutes
   # Specify which call_selector you want to use, then check the plugin configuration
   # The selector 'Any' accept any callsigns.
-  call_selector: Any
+  call_selector:
+    - DXCC100
+    - POTA
+    - Any
 
 BlackList:
-  - W6UQ
+  - KC5TT
+  - KD7DPS
+  - VA7QI
+  - W5JDC
   - W6IPA
 
 #
