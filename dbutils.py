@@ -143,11 +143,11 @@ class DBInsert(Thread):
   UPDATE = "UPDATE cqcalls SET status=? WHERE status <> 2 and call = ? and band = ?"
   DELETE = "DELETE from cqcalls WHERE status= 1 AND call = ? and band = ?"
 
-  def __init__(self, config, queue):
+  def __init__(self, db_name, queue, grid):
     super().__init__()
-    self.db_name = config.db_name
+    self.db_name = db_name
     self.queue = queue
-    self.origin = geo.grid2latlon(config.my_grid)
+    self.origin = geo.grid2latlon(grid)
     self.dxe_lookup = DXEntity.DXCC().lookup
 
   def run(self):

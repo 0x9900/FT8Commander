@@ -19,6 +19,8 @@ from importlib import import_module
 from logging.handlers import RotatingFileHandler
 from queue import Queue
 
+from libpath import Path
+
 import geo
 import wsjtx
 from config import Config
@@ -46,7 +48,6 @@ LOG = None
 class Sequencer:
   # pylint: disable=too-many-instance-attributes
   def __init__(self, config, queue, call_select):
-    self.db_name = config.db_name
     self.mycall = config.my_call
     self.queue = queue
     self.selector = call_select
@@ -291,18 +292,19 @@ def main():
   file_handler.setFormatter(formatter)
   LOG.addHandler(file_handler)
 
-  create_db(config.db_name)
+  db_name = Path(config.db_name).expanduser()
+  create_db(db_name)
 
   queue = Queue()
   try:
-    db_thread = DBInsert(config, queue)
+    db_thread = DBInsert(db_name, queue, config.my_grid)
     db_thread.daemon = True
     db_thread.start()
   except RuntimeError as err:
     LOG.error("Configuration error: %s", err)
     raise SystemExit('Configuration Error') from None
 
-  db_purge = Purge(config.db_name, config.retry_time)
+  db_purge = Purge(db_name, config.retry_time)
   db_purge.daemon = True
   db_purge.start()
 
