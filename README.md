@@ -19,8 +19,8 @@ QSO.
   2. Start WSJT-X
   3. Go to the directory FT8Commander
   4. Copy the `ft8ctrl.yaml.sample` into `ft8ctrl.yaml`
-  5. Edit to the configuration file and enter your information
-  6, Start the python program `./ft8ctrl.py`
+  5. Edit the configuration file and enter your information
+  6. Start the Python program `./ft8ctrl.py`
   7. Watch WSJT-X making contacts.
 
 > This program runs on MacOS and Linux.
