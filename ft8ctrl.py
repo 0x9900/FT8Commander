@@ -197,11 +197,11 @@ class LoadPlugins:
 
   def __init__(self, plugins):
     """Load and initialize plugins"""
-    LOG.info('Call selector: %s', ', '.join(plugins))
     self.call_select = []
     if isinstance(plugins, str):
       plugins = [plugins]
 
+    LOG.info('Call selector: %s', ', '.join(plugins))
     for plugin in plugins:
       *module_name, class_name = plugin.split('.')
       module_name = '.'.join(['plugins'] + module_name)
