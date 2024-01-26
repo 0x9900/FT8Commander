@@ -146,38 +146,39 @@ class Sequencer:
       for fdin in fds:
         rawdata, ip_from = fdin.recvfrom(1024)
         packet = wsjtx.ft8_decode(rawdata)
-        if isinstance(packet, wsjtx.WSHeartbeat):
-          pass
-        elif isinstance(packet, wsjtx.WSLogged):
-          self.logcall(packet)
-          current = None
-        elif isinstance(packet, wsjtx.WSADIF):
-          pass
-        elif isinstance(packet, wsjtx.WSDecode):
-          name, match = self.decode(packet)
-          if name == 'REPLY' and match['call'] == current and match['to'] != self.mycall:
-            LOG.info("Stop Transmit: %s Replying to %s ", match['call'], match['to'])
-            self.stop_transmit(ip_from)
-            self.queue.put((DBCommand.DELETE,
-                            {"call": match['call'], "band": get_band(frequency)}))
-          elif name == 'CQ':
-            match['frequency'] = frequency
-            match['band'] = get_band(frequency)
-            match['packet'] = packet.as_dict()
-            self.queue.put((DBCommand.INSERT, match))
-          continue
-        elif isinstance(packet, wsjtx.WSStatus):
-          sequence = SEQUENCE_TIME[packet.TXMode]
-          frequency = packet.Frequency
-          tx_status = any([packet.Transmitting, packet.TXEnabled])
-          if (packet.Transmitting and packet.DXCall):
-            self.queue.put(
-              (DBCommand.STATUS,
-               {"call": packet.DXCall, "status": 1, "band": get_band(frequency)})
-            )
-          if packet.DXCall:
-            LOG.debug("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
-                      packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
+        match packet:
+          case wsjtx.WSHeartbeat() | wsjtx.WSADIF():
+            pass
+          case wsjtx.WSLogged():
+            self.logcall(packet)
+            current = None
+          case wsjtx.WSDecode():
+            name, match = self.decode(packet)
+            if name == 'REPLY' and match['call'] == current and match['to'] != self.mycall:
+              LOG.info("Stop Transmit: %s Replying to %s ", match['call'], match['to'])
+              self.stop_transmit(ip_from)
+              self.queue.put((DBCommand.DELETE,
+                              {"call": match['call'], "band": get_band(frequency)}))
+            elif name == 'CQ':
+              match['frequency'] = frequency
+              match['band'] = get_band(frequency)
+              match['packet'] = packet.as_dict()
+              self.queue.put((DBCommand.INSERT, match))
+            continue
+          case wsjtx.WSStatus():
+            sequence = SEQUENCE_TIME[packet.TXMode]
+            frequency = packet.Frequency
+            tx_status = any([packet.Transmitting, packet.TXEnabled])
+            if (packet.Transmitting and packet.DXCall):
+              self.queue.put(
+                (DBCommand.STATUS,
+                 {"call": packet.DXCall, "status": 1, "band": get_band(frequency)})
+              )
+            if packet.DXCall:
+              LOG.debug("%s => TX: %s, TXEnabled: %s - TXWatchdog: %s", packet.DXCall,
+                        packet.Transmitting, packet.TXEnabled, packet.TXWatchdog)
+          case _:
+            LOG.debug('Packet type "%r" not processed', packet)
 
       # Outside the for loop
       if not self.pause and not tx_status:
@@ -237,6 +238,7 @@ def get_log_level():
 
 
 def main():
+  # pylint: disable=global-statement
   global LOG
   parser = ArgumentParser(description="ft8ctl wsjt-x automation")
   parser.add_argument("-c", "--config", help="Name of the configuration file")
