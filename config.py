@@ -70,7 +70,7 @@ class Config:
     return f"{myself} file: {self.config_filename}"
 
   def to_yaml(self):
-    return yaml.dump(self.config_data)
+    return yaml.dump(self.config_data, explicit_start=True)
 
   def get(self, key, default=None):
     try:
