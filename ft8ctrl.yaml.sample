@@ -15,8 +15,6 @@ ft8ctrl:
   # Specify which call_selector you want to use, then check the plugin configuration
   # The selector 'Any' accept any callsigns.
   call_selector:
-    - DXCC100
-    - POTA
     - Any
 
 BlackList:
@@ -91,8 +89,12 @@ DXCC100:
   worked_count: 4
   lotw_users_only: False
 
-POTA:
-  min_snr: -17
-
-VOTA:
-  min_snr: -17
+Extra:
+  min_snr: -18
+  min_snr: 1
+  list:
+    - POTA
+    - NA
+    - US
+    - USA
+    - QRP
