@@ -18,8 +18,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install flake8 pylint PyYAML DXEntity
-    - name: Analysing the code with pylint
+        python -m pip install pylint
+        python -m pip install DXEntity PyYAML flake8 tabulate
+    - name: Lint check
       continue-on-error: false
       run: |
         pylint $(git ls-files "*.py")
