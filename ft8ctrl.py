@@ -209,7 +209,7 @@ class LoadPlugins:
       try:
         klass = getattr(module, class_name)
       except AttributeError:
-        LOG.error('Call selector not found: "%s"', class_name)
+        LOG.error('Call selector plugin %s not found', class_name)
         raise SystemExit(f'"{class_name}" not found') from None
       self.call_select.append(klass())
 
