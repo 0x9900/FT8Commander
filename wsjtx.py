@@ -694,7 +694,7 @@ class WSLogged(_WSPacket):
 
   @DateTimeOn.setter
   def DateTimeOn(self, val):
-    self._data['DateTimeOn'] = val
+    self._data['DateTimeOn'] = to_julian(val)
 
   @property
   def OpCall(self):
