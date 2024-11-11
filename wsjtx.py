@@ -594,16 +594,16 @@ class WSLogged(_WSPacket):
     self._set_string(self._data['Mode'])
     self._set_string(self._data['ReportSent'])
     self._set_string(self._data['ReportReceived'])
-    self._set_string(self._data['TXPower'])
-    self._set_string(self._data['Comments'])
-    self._set_string(self._data['Name'])
+    self._set_string(self._data.get('TXPower'))
+    self._set_string(self._data.get('Comments'))
+    self._set_string(self._data.get('Name', ''))
     self._set_datetime(self._data['DateTimeOn'])
-    self._set_string(self._data['OpCall'])
-    self._set_string(self._data['MyCall'])
-    self._set_string(self._data['MyGrid'])
-    self._set_string(self._data['ExSent'])
-    self._set_string(self._data['ExReceived'])
-    self._set_string(self._data['PropMode'])
+    self._set_string(self._data.get('OpCall', ''))
+    self._set_string(self._data.get('MyCall', ''))
+    self._set_string(self._data.get('MyGrid', ''))
+    self._set_string(self._data.get('ExSent', ''))
+    self._set_string(self._data.get('ExReceived', ''))
+    self._set_string(self._data.get('PropMode', ''))
 
   @property
   def DateTimeOff(self):
@@ -644,7 +644,11 @@ class WSLogged(_WSPacket):
 
   @Mode.setter
   def Mode(self, val):
-    self._data['Mode'] = getattr(Mode, val).value
+    assert isinstance(val, str)
+    try:
+      self._data['Mode'] = getattr(Mode, val).value
+    except AttributeError:
+      self._data['Mode'] = val
 
   @property
   def ReportSent(self):
