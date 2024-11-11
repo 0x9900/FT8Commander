@@ -230,7 +230,6 @@ class _WSPacket:
 
 class WSHeartbeat(_WSPacket):
   """Packet Type 0 Heartbeat (In/Out)"""
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.HEARTBEAT
@@ -267,7 +266,6 @@ class WSHeartbeat(_WSPacket):
 
 class WSStatus(_WSPacket):
   """Packet Type 1 Status  (Out)"""
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.STATUS
@@ -383,7 +381,6 @@ class WSStatus(_WSPacket):
 
 class WSDecode(_WSPacket):
   """Packet Type 2  Decode  (Out)"""
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.DECODE
@@ -442,7 +439,6 @@ class WSDecode(_WSPacket):
 
 class WSClear(_WSPacket):
   """Packet Type 3  Clear (Out/In)"""
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.CLEAR
@@ -471,7 +467,6 @@ class WSReply(_WSPacket):
   * Low confidence         bool
   * Modifiers              quint8
   """
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.REPLY
@@ -560,7 +555,6 @@ class WSReply(_WSPacket):
 
 class WSLogged(_WSPacket):
   """Packet Type 5 QSO Logged (Out)"""
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.QSOLOGGED
@@ -751,7 +745,6 @@ class WSLogged(_WSPacket):
 
 class WSClose(_WSPacket):
   """Packet Type 6 Close (Out/In)"""
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.CLOSE
@@ -759,7 +752,6 @@ class WSClose(_WSPacket):
 
 class WSReplay(_WSPacket):
   """Packet Type 7 Replay (In)"""
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.REPLAY
@@ -772,7 +764,6 @@ class WSHaltTx(_WSPacket):
   self.mode = False
       Will stop the transmission immediately
   """
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.HALTTX
@@ -794,7 +785,6 @@ class WSHaltTx(_WSPacket):
 
 class WSFreeText(_WSPacket):
   """Packet Type 9 Free Text (In)"""
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.FREETEXT
@@ -825,7 +815,6 @@ class WSFreeText(_WSPacket):
 
 class WSWSPRDecode(_WSPacket):
   """Packet Type 10 WSPR Decode (Out)"""
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.WSPRDECODE
@@ -833,7 +822,6 @@ class WSWSPRDecode(_WSPacket):
 
 class WSLocation(_WSPacket):
   """Packet Type 11 Location (In)"""
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.LOCATION
@@ -841,7 +829,6 @@ class WSLocation(_WSPacket):
 
 class WSADIF(_WSPacket):
   """Packet Type 12 Logged ADIF (Out)"""
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.LOGGEDADIF
@@ -875,7 +862,6 @@ class WSHighlightCallsign(_WSPacket):
   Foreground Color       QColor
   Highlight last         bool
   """
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.HIGHLIGHTCALLSIGN
@@ -935,7 +921,6 @@ class WSHighlightCallsign(_WSPacket):
 
 class WSSwitchConfiguration(_WSPacket):
   """Packet Type 14 Switch Configuration (In)"""
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.SWITCHCONFIGURATION
@@ -943,7 +928,6 @@ class WSSwitchConfiguration(_WSPacket):
 
 class WSConfigure(_WSPacket):
   """Packet Type 15 Configure (In)"""
-
   def __init__(self, pkt=None):
     super().__init__(pkt)
     self._packet_type = PacketType.CONFIGURE
