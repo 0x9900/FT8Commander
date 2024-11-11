@@ -26,7 +26,7 @@ from dbutils import connect_db
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 LOTW_URL = 'https://lotw.arrl.org/lotw-user-activity.csv'
-LOTW_CACHE = Path.home() / '.local/lotw_cache'
+LOTW_CACHE = Path('/tmp/lotw_cache.dat')
 LOTW_EXPIRE = 7 * 86400
 LOTW_LASTSEEN = 270             # Users who haven't used LOTW for 'n' days
 

@@ -12,7 +12,7 @@ from pathlib import Path
 import yaml
 
 CONFIG_FILENAME = "ft8ctrl.yaml"
-CONFIG_LOCATIONS = ['/etc', '~/.local', '.']
+CONFIG_LOCATIONS = ['/etc', '~/.local/etc', '.']
 
 
 class Config:
