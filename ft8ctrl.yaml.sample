@@ -12,6 +12,7 @@ ft8ctrl:
   wsjt_port: 2238
   follow_frequency: False
   retry_time: 15                 # In minutes
+  tx_power: 30
   # Specify which call_selector you want to use, then check the plugin configuration
   # The selector 'Any' accept any callsigns.
   call_selector:
