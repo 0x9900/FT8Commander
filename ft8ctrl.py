@@ -48,6 +48,7 @@ class Sequencer:
     self.queue = queue
     self.selector = call_select
     self.follow_frequency = config.follow_frequency
+    self.tx_power = getattr(config, 'tx_power')
 
     bind_addr = socket.gethostbyname(config.wsjt_ip)
     self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -95,8 +96,7 @@ class Sequencer:
   def sendto_log(self, packet):
     if not self.logger_ip or not self.logger_port:
       return
-    now = datetime.now()
-    packet.TXPower = 11 + (now.timetuple().tm_yday % 8)
+    packet.TXPower = str(self.tx_power or packet.TXPower)
     packet.Comments = "[ft8ctrl] " + packet.Comments
     if not self.logger_socket:
       self.logger_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
