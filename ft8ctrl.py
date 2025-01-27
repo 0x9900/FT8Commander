@@ -36,8 +36,8 @@ PARSERS = {
   'BROKENCQ': re.compile(r'^CQ\s(?P<call>\w+(|/\w+))$'),
 }
 
-LOGFILE_SIZE = 2 << 18
-LOGFILE_NAME = 'ft8ctrl.log'
+LOGFILE_SIZE = 2 << 20
+LOGFILE_NAME = 'ft8ctrl-debug.log'
 LOG = None
 
 

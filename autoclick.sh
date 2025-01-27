@@ -26,15 +26,16 @@ while [[ $windowid == 0 ]]; do
             break
         fi
     done
-    [[ ${windowid} == 0 ]] &&  sleep 5
+    [[ ${windowid} == 0 ]] &&  sleep 15
 done
 echo "Logging window ID: ${windowid}"
 
 while true; do
     while xdotool windowactivate ${windowid} 2>&1 | grep -q "failed"; do
-        sleep 5
+        sleep 7
     done
     sleep .5
     xdotool key Return
-    sleep 10
+    echo "Key pressed on ${windowid}"
+    sleep 60
 done
