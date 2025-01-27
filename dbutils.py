@@ -152,7 +152,7 @@ class DBInsert(Thread):
 
   def run(self):
     # pylint: disable=no-member
-    logger.info('Datebase Insert thread started')
+    logger.info('Database Insert thread started')
     conn = connect_db(self.db_name)
     # Run forever and consume the queue
     while True:
