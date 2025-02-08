@@ -32,7 +32,7 @@ echo "Logging window ID: ${windowid}"
 
 while true; do
     while xdotool windowactivate ${windowid} 2>&1 | grep -q "failed"; do
-        sleep 7
+        sleep 4
     done
     sleep .5
     xdotool key Return
