@@ -363,20 +363,20 @@ class WSStatus(_WSPacket):
     return self._data['SOMode']
 
   @property
-  def reqTolerance(self):
-    return self._data['reqTolerance']
+  def FreqTolerance(self):
+    return self._data['FreqTolerance']
 
   @property
-  def RPeriod(self):
-    return self._data['RPeriod']
+  def TRPeriod(self):
+    return self._data['TRPeriod']
 
   @property
-  def onfigName(self):
-    return self._data['onfigName']
+  def ConfigName(self):
+    return self._data['ConfigName']
 
   @property
-  def xMessage(self):
-    return self._data['xMessage']
+  def TxMessage(self):
+    return self._data['TxMessage']
 
 
 class WSDecode(_WSPacket):
