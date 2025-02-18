@@ -135,6 +135,7 @@ class Sequencer:
     return (None, None)
 
   def run(self):
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     ip_from = None
     tx_status = False
     frequency = 0
