@@ -169,7 +169,8 @@ class Sequencer:
               self.queue.put((DBCommand.INSERT, match))
             continue
           case wsjtx.WSStatus():
-            # WSJT-X will sometimes send multiple status packets where Transmitting is True for the same transmission.
+            # WSJT-X will sometimes send multiple status packets where Transmitting is
+            # True for the same transmission.
             # Checking Decoding here prevents increases in retries for the same transmission.
             tx = not packet.Decoding and packet.Transmitting
             if tx and last_tx_message == packet.TxMessage:
