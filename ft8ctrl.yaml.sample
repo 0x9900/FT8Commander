@@ -13,6 +13,8 @@ ft8ctrl:
   follow_frequency: False
   retry_time: 15                 # In minutes
   tx_power: 30
+  # tx_retries determines how many times to attempt the same message before stopping transmission
+  tx_retries: 5
   # Specify which call_selector you want to use, then check the plugin configuration
   # The selector 'Any' accept any callsigns.
   call_selector:

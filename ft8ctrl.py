@@ -49,6 +49,7 @@ class Sequencer:
     self.selector = call_select
     self.follow_frequency = config.follow_frequency
     self.tx_power = getattr(config, 'tx_power')
+    self.tx_retries = getattr(config, 'tx_retries', 5)
 
     bind_addr = socket.gethostbyname(config.wsjt_ip)
     self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -138,6 +139,8 @@ class Sequencer:
     tx_status = False
     frequency = 0
     current = None
+    current_retries = 0
+    last_tx_message = ""
     sequence = []
     LOG.info('ft8ctl running...')
 
@@ -166,6 +169,22 @@ class Sequencer:
               self.queue.put((DBCommand.INSERT, match))
             continue
           case wsjtx.WSStatus():
+            # WSJT-X will sometimes send multiple status packets where Transmitting is True for the same transmission.
+            # Checking Decoding here prevents increases in retries for the same transmission.
+            tx = not packet.Decoding and packet.Transmitting
+            if tx and last_tx_message == packet.TxMessage:
+              if current_retries >= self.tx_retries:
+                LOG.info("Retries exceeded, stopping transmit")
+                self.stop_transmit(ip_from)
+                current_retries = 0
+                continue
+            elif tx and last_tx_message != packet.TxMessage:
+              current_retries = 0
+
+            if tx:
+              current_retries += 1
+              last_tx_message = packet.TxMessage
+
             sequence = SEQUENCE_TIME[packet.TXMode]
             frequency = packet.Frequency
             tx_status = any([packet.Transmitting, packet.TXEnabled])
@@ -188,6 +207,7 @@ class Sequencer:
           if data:
             self.call_station(ip_from, data)
             current = data['call']
+            current_retries = 0
           else:
             current = None
           time.sleep(1)
