@@ -73,15 +73,7 @@ class BlackList:
     except KeyError:
       pass
 
-    try:
-      tsize = os.get_terminal_size()
-      width = tsize.columns - 50
-    except OSError:
-      width = 70
-    _bl = ', '.join(c for c in cls.blacklist)[:width]
-    _bl = _bl[:_bl.rindex(',')]
-    cls.log.info("BlackList: %s...", _bl)
-
+    cls.log.info("Blacklist: %d callsigns blacklisted.", len(cls.blacklist))
     return cls._instance
 
   def check(self, call):
