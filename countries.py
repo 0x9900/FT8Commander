@@ -50,12 +50,15 @@ def country(ctry):
 
 
 def main():
-  parser = ArgumentParser(description="DXCC entities lookup")
+  parser = ArgumentParser(
+    prog='countries',
+    description="Helper program for looking up DXCC entities."
+  )
   x_grp = parser.add_mutually_exclusive_group(required=True)
   x_grp.add_argument("-l", "--list", action="store_true", default=False,
                      help="List all the countries")
   x_grp.add_argument("-c", "--country", type=str,
-                     help="Find the country from a callsign")
+                     help="Find the country from a callsign or a prefix")
   x_grp.add_argument("-C", "--check", type=str,
                      help="Check if the country from a exists")
   x_grp.add_argument("-p", "--prefix", type=str,
