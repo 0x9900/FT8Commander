@@ -19,8 +19,8 @@ def get_prefix(prefix):
   # pylint: disable=no-member
   dxcc = DXEntity.DXCC()
   prefix = prefix.upper()
-  match, result = dxcc.get_prefix(prefix)
-  print(f"Call prefix: {match} > {result.prefix} = {result.country} - Continent: "
+  result = dxcc.lookup(prefix)
+  print(f"Prefix: {prefix} > {result.prefix} = {result.country} - Continent: "
         f"{result.continent}, CQZone: "
         f"{result.cqzone}, ITUZone: {result.ituzone}")
 
