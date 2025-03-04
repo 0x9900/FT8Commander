@@ -24,8 +24,8 @@ from config import Config
 from dbutils import DBCommand, DBInsert, Purge, create_db, get_band
 
 SEQUENCE_TIME = {
-  'FT8': (2, 17, 32, 47),
-  'FT4': (0, 6, 12, 18, 24, 30, 36, 42, 48, 54),
+  'FT8': {2, 17, 32, 47},
+  'FT4': {0, 6, 12, 18, 24, 30, 36, 42, 48, 54},
 }
 
 PARSERS = {
@@ -60,8 +60,6 @@ class Sequencer:
     self.logger_ip = getattr(config, 'logger_ip', None)
     self.logger_port = getattr(config, 'logger_port', None)
     self.logger_socket = None
-
-    self.pause = False
 
   def call_station(self, ip_from, data):
     LOG.info(('Calling: %s (%s), From: %s, SNR: %d, Distance: %d, Band: %dm '
@@ -105,14 +103,13 @@ class Sequencer:
 
   def parser(self, message):
     for name, regexp in PARSERS.items():
-      match = regexp.match(message)
-      if not match:
+      if not (match := regexp.match(message)):
         continue
       data = match.groupdict()
       if name == 'BROKENCQ':
         name = 'CQ'
         data['extra'] = data['grid'] = None
-      if name == 'CQ':
+      elif name == 'CQ':
         LOG.debug("%s = %r, %s", name, data, message)
       return (name, data)
     LOG.debug('Unmatched: %s', message)
@@ -202,13 +199,13 @@ class Sequencer:
             LOG.debug('Packet type "%r" not processed', packet)
 
       # Outside the for loop
-      if not self.pause and not tx_status:
+      if not tx_status:
         _now = datetime.utcnow()
         if _now.second in sequence:
           data = self.selector(get_band(frequency))
           if data:
             self.call_station(ip_from, data)
-            current = data['call']
+            current = data.get('call')
             current_retries = 0
           else:
             current = None
