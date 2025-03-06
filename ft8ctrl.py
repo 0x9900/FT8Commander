@@ -115,7 +115,7 @@ class Sequencer:
     LOG.debug('Unmatched: %s', message)
     return (None, None)
 
-  def logcall(self, packet):
+  def log_call(self, packet):
     self.sendto_log(packet)
     frequency = packet.DialFrequency
     self.queue.put(
@@ -151,7 +151,7 @@ class Sequencer:
           case wsjtx.WSHeartbeat() | wsjtx.WSADIF():
             pass
           case wsjtx.WSLogged():
-            self.logcall(packet)
+            self.log_call(packet)
             current = None
           case wsjtx.WSDecode():
             name, match = self.decode(packet)
