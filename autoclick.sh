@@ -13,29 +13,33 @@
 #
 
 
-declare -a wids
-
-windowid=0
-while [[ $windowid == 0 ]]; do
-    wids=$(xdotool search --name "WSJT-X" )
-    for id in $wids; do
-        # echo "${id} = $(xdotool getwindowname ${id})"
-        xdotool getwindowname ${id} | grep "^WSJT-X.*QSO$"
-        if [[ $? == 0 ]]; then
-            windowid=${id}
-            break
-        fi
+find_wsjtx() {
+    local -a wids
+    local windowid=0
+    while [[ $windowid == 0 ]]; do
+        wids=$(xdotool search --name "WSJT-X")
+        for id in $wids; do
+            # echo "${id} = $(xdotool getwindowname ${id})"
+            xdotool getwindowname ${id} | grep -q "^WSJT-X.*QSO$"
+            if [[ $? == 0 ]]; then
+                windowid=${id}
+                break
+            fi
+        done
+        [[ ${windowid} == 0 ]] &&  sleep 15
     done
-    [[ ${windowid} == 0 ]] &&  sleep 15
-done
+    echo $windowid
+}
+
+windowid=$(find_wsjtx)
 echo "Logging window ID: ${windowid}"
 
 while true; do
     while xdotool windowactivate ${windowid} 2>&1 | grep -q "failed"; do
-        sleep 4
+        sleep 2
     done
-    sleep .5
+    sleep .8
     xdotool key Return
     echo "Key pressed on ${windowid}"
-    sleep 60
+    sleep 10
 done
