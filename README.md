@@ -16,6 +16,7 @@ QSO.
 
 ## Usage:
   1. Install the **DXEntity** package `pip install DXEntity`
+  	1a. If you receive an error `ModuleNotFoundError: No module named 'yaml'`, it can be resolved by installing the `pyyaml` package: `pip install pyyaml`
   2. Start WSJT-X
   3. In a terminal or powershell Go to the directory FT8Commander
   4. Copy the `ft8ctrl.yaml.sample` into `ft8ctrl.yaml`
